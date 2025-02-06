@@ -11,11 +11,10 @@
 		D4145C172D4D959700EAF352 /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4145C162D4D959700EAF352 /* UserData.swift */; };
 		D4145C192D4D979700EAF352 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4145C182D4D979700EAF352 /* CameraView.swift */; };
 		D4145C1F2D4D9DB300EAF352 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = D4145C1E2D4D9DB300EAF352 /* Shaders.metal */; };
-		D41623122D4F401B00A5463C /* RediStack in Frameworks */ = {isa = PBXBuildFile; productRef = D41623112D4F401B00A5463C /* RediStack */; };
-		D41623142D4F401B00A5463C /* RediStackTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = D41623132D4F401B00A5463C /* RediStackTestUtils */; };
-		D41623162D4F401B00A5463C /* RedisTypes in Frameworks */ = {isa = PBXBuildFile; productRef = D41623152D4F401B00A5463C /* RedisTypes */; };
-		D416231B2D4FE64400A5463C /* SwiftRedis in Frameworks */ = {isa = PBXBuildFile; productRef = D416231A2D4FE64400A5463C /* SwiftRedis */; };
 		D41623262D50082500A5463C /* websocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41623252D50082500A5463C /* websocket.swift */; };
+		D44349D02D506A8200F705D9 /* AudioCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */; };
+		D44349D22D506ADA00F705D9 /* AudioMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44349D12D506ADA00F705D9 /* AudioMeterView.swift */; };
+		D4B42C452D52E844006EA7C9 /* PerlinBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +44,9 @@
 		D4145C1E2D4D9DB300EAF352 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		D41623222D4FEB0600A5463C /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		D41623252D50082500A5463C /* websocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = websocket.swift; sourceTree = "<group>"; };
+		D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureView.swift; sourceTree = "<group>"; };
+		D44349D12D506ADA00F705D9 /* AudioMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMeterView.swift; sourceTree = "<group>"; };
+		D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerlinBackgroundView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -83,10 +85,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D41623162D4F401B00A5463C /* RedisTypes in Frameworks */,
-				D41623122D4F401B00A5463C /* RediStack in Frameworks */,
-				D416231B2D4FE64400A5463C /* SwiftRedis in Frameworks */,
-				D41623142D4F401B00A5463C /* RediStackTestUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -110,9 +108,12 @@
 		D4145BDD2D4C65BE00EAF352 = {
 			isa = PBXGroup;
 			children = (
+				D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */,
+				D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */,
 				D41623252D50082500A5463C /* websocket.swift */,
 				D4145C1E2D4D9DB300EAF352 /* Shaders.metal */,
 				D4145C182D4D979700EAF352 /* CameraView.swift */,
+				D44349D12D506ADA00F705D9 /* AudioMeterView.swift */,
 				D4145C162D4D959700EAF352 /* UserData.swift */,
 				D4145C142D4CB97B00EAF352 /* tutorial.swift */,
 				D4145BE82D4C65BE00EAF352 /* Ping */,
@@ -161,10 +162,6 @@
 			);
 			name = Ping;
 			packageProductDependencies = (
-				D41623112D4F401B00A5463C /* RediStack */,
-				D41623132D4F401B00A5463C /* RediStackTestUtils */,
-				D41623152D4F401B00A5463C /* RedisTypes */,
-				D416231A2D4FE64400A5463C /* SwiftRedis */,
 			);
 			productName = Ping;
 			productReference = D4145BE62D4C65BE00EAF352 /* Ping.app */;
@@ -249,8 +246,6 @@
 			mainGroup = D4145BDD2D4C65BE00EAF352;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				D41623102D4F401B00A5463C /* XCRemoteSwiftPackageReference "RediStack" */,
-				D41623192D4FE64400A5463C /* XCRemoteSwiftPackageReference "Kitura-redis" */,
 				D416231E2D4FEA5F00A5463C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -296,7 +291,10 @@
 			files = (
 				D41623262D50082500A5463C /* websocket.swift in Sources */,
 				D4145C152D4CB97B00EAF352 /* tutorial.swift in Sources */,
+				D4B42C452D52E844006EA7C9 /* PerlinBackgroundView.swift in Sources */,
+				D44349D02D506A8200F705D9 /* AudioCaptureView.swift in Sources */,
 				D4145C1F2D4D9DB300EAF352 /* Shaders.metal in Sources */,
+				D44349D22D506ADA00F705D9 /* AudioMeterView.swift in Sources */,
 				D4145C172D4D959700EAF352 /* UserData.swift in Sources */,
 				D4145C192D4D979700EAF352 /* CameraView.swift in Sources */,
 			);
@@ -652,22 +650,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		D41623102D4F401B00A5463C /* XCRemoteSwiftPackageReference "RediStack" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/swift-server/RediStack.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.6.2;
-			};
-		};
-		D41623192D4FE64400A5463C /* XCRemoteSwiftPackageReference "Kitura-redis" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/Kitura/Kitura-redis";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.1.200;
-			};
-		};
 		D416231E2D4FEA5F00A5463C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
@@ -677,29 +659,6 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		D41623112D4F401B00A5463C /* RediStack */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D41623102D4F401B00A5463C /* XCRemoteSwiftPackageReference "RediStack" */;
-			productName = RediStack;
-		};
-		D41623132D4F401B00A5463C /* RediStackTestUtils */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D41623102D4F401B00A5463C /* XCRemoteSwiftPackageReference "RediStack" */;
-			productName = RediStackTestUtils;
-		};
-		D41623152D4F401B00A5463C /* RedisTypes */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D41623102D4F401B00A5463C /* XCRemoteSwiftPackageReference "RediStack" */;
-			productName = RedisTypes;
-		};
-		D416231A2D4FE64400A5463C /* SwiftRedis */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D41623192D4FE64400A5463C /* XCRemoteSwiftPackageReference "Kitura-redis" */;
-			productName = SwiftRedis;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D4145BDE2D4C65BE00EAF352 /* Project object */;
 }

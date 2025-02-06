@@ -1,133 +1,109 @@
-//
-//  websocket.swift
-//  Ping
-//
-//  Created by James Nebeker on 2/2/25.
-//
-
 import Foundation
+import Combine
 
-public enum WebSocketConnectionError: Error {
-    case connectionError
-    case transportError
-    case encodingError
-    case decodingError
-    case disconnected
-    case closed
-}
+// MARK: - WebSocket Client
+class RedisClient: NSObject, URLSessionWebSocketDelegate {
+    private var webSocket: URLSessionWebSocketTask?
+    private var session: URLSession?
 
-public final class WebSocketConnection<Incoming: Decodable & Sendable, Outgoing: Encodable & Sendable>: NSObject, Sendable {
-    
-    private let webSocketTask: URLSessionWebSocketTask
-    
-    private let encoder: JSONEncoder
-    private let decoder: JSONDecoder
-    
-    internal init(webSocketTask: URLSessionWebSocketTask, encoder: JSONEncoder, decoder: JSONDecoder) {
-        self.webSocketTask = webSocketTask
-        self.encoder = encoder
-        self.decoder = decoder
-        
+    var onMessageReceived: ((String) -> Void)?
+
+    init(url: URL) {
         super.init()
-        
-        webSocketTask.resume()
-    }
-    
-    deinit {
-        // Make sure to cancel the WebSocket task (if not already closed)
-        
-        webSocketTask.cancel(with: .goingAway, reason: nil)
-    }
-    
-    private func receiveSingleMessage() async throws -> Incoming {
-        switch try await webSocketTask.receive() {
-        case let .data(messageData):
-            guard let message = try? decoder.decode(Incoming.self, from: messageData) else {
-                throw WebSocketConnectionError.decodingError
-            }
-            return message
-            
-        case let .string(text): // Corrected this line
-            guard
-                let messageData = text.data(using: .utf8),
-                let message = try? decoder.decode(Incoming.self, from: messageData)
-            else {
-                throw WebSocketConnectionError.decodingError
-            }
-            return message
 
-        @unknown default:
-            assertionFailure("unknown message type")
-            webSocketTask.cancel(with: .unsupportedData, reason: nil)
-            throw WebSocketConnectionError.decodingError
+        session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+        self.webSocket = session?.webSocketTask(with: url)
+        self.webSocket?.resume()
+
+        print("🔗 WebSocket connecting to \(url.absoluteString)")
+        
+        listenForMessages()
+    }
+
+    // ✅ Listen for messages continuously
+    private func listenForMessages() {
+        webSocket?.receive { [weak self] result in
+            switch result {
+            case .success(let message):
+                switch message {
+                case .string(let text):
+                    print("📩 Received message: \(text)")
+                    self?.onMessageReceived?(text)
+                default:
+                    print("❓ Received unknown message type")
+                }
+            case .failure(let error):
+                print("❌ WebSocket error: \(error.localizedDescription)")
+            }
+
+            // ✅ Keep listening for new messages
+            self?.listenForMessages()
         }
     }
 
+    // ✅ Send a message over WebSocket
+    func sendMessage(_ message: String) {
+        guard let webSocket = webSocket else {
+            print("❌ WebSocket is nil, cannot send message")
+            return
+        }
 
-   
+        let wsMessage = URLSessionWebSocketTask.Message.string(message)
+        webSocket.send(wsMessage) { error in
+            if let error = error {
+                print("❌ Failed to send message: \(error.localizedDescription)")
+            } else {
+                print("✅ Message sent: \(message)")
+            }
+        }
+    }
+
+    // ✅ Close WebSocket connection
+    func closeConnection() {
+        webSocket?.cancel(with: .goingAway, reason: nil)
+        print("🔴 WebSocket connection closed")
+    }
+
+    // ✅ WebSocket connection successful
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        print("🟢 WebSocket connected successfully!")
+    }
+
+    // ✅ WebSocket connection closed
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        print("🔴 WebSocket disconnected. Reason: \(String(describing: reason))")
+    }
 }
 
-// MARK: Public Interface
+// MARK: - WebSocket ViewModel
+class WebSocketViewModel: ObservableObject {
+    @Published var receivedMessage: String = "No users in call..."
+    private var redisClient: RedisClient?
 
-extension WebSocketConnection {
-    func send(_ message: Outgoing) async throws {
-        guard let messageData = try? encoder.encode(message) else {
-            throw WebSocketConnectionError.encodingError
-        }
-        
-        do {
-            try await  webSocketTask.send(.data(messageData))
-        } catch {
-            switch webSocketTask.closeCode {
-            case .invalid:
-                throw WebSocketConnectionError.connectionError
-                
-            case .goingAway:
-                throw WebSocketConnectionError.disconnected
-                
-            case .normalClosure:
-                throw WebSocketConnectionError.closed
-            default:
-                throw WebSocketConnectionError.transportError
-            }
-        }
-        
+    init() {
+        connect()
     }
-    
-    func receiveOnce() async throws -> Incoming {
-        do {
-            return try await receiveSingleMessage()
-        } catch let error as WebSocketConnectionError {
-            throw error
-        } catch  {
-            switch webSocketTask.closeCode {
-            case .invalid:
-                throw WebSocketConnectionError.connectionError
-            case .goingAway:
-                throw WebSocketConnectionError.disconnected
-            case .normalClosure:
-                throw WebSocketConnectionError.closed
-            default:
-                throw WebSocketConnectionError.transportError
+
+    func connect() {
+        guard let url = URL(string: "ws://127.0.0.1:8080/ws") else {
+            print("❌ Invalid WebSocket URL")
+            return
+        }
+        redisClient = RedisClient(url: url)
+
+        // Listen for new messages and update @Published property
+        redisClient?.onMessageReceived = { [weak self] message in
+            DispatchQueue.main.async {
+                self?.receivedMessage = message
             }
         }
     }
-    
-    func receive() ->   AsyncThrowingStream<Incoming, Error> {
-        AsyncThrowingStream { [weak self] in
-        
-            guard let self else {
-                return nil
-            }
-            
-            let message = try await self.receiveOnce()
-            
-            return Task.isCancelled ? nil : message
-        }
-        
+
+    func sendMessage(_ message: String) {
+        redisClient?.sendMessage(message)
     }
-    
-    func close() {
-        webSocketTask.cancel(with: .normalClosure, reason: nil)
+
+    func disconnect() {
+        redisClient?.closeConnection()
     }
 }
