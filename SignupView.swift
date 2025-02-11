@@ -53,19 +53,47 @@ public struct SignupView: View {
                 Button(action: {
                     // Sign up action
                 }) {
-                    Text("Sign Up")
-                        .foregroundColor(.white)
-                        .frame(width: 160, height: 40)
-                        .background(
-                            LinearGradient(
-                                gradient: AppColors.primaryGradient,
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
+                    HStack(spacing: 8) {
+                        Image(systemName: "person.badge.plus")
+                            .imageScale(.medium)
+                        Text("Sign Up")
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundColor(.white)
+                    .frame(width: 160, height: 40)
+                    .background(
+                        LinearGradient(
+                            gradient: AppColors.primaryGradient,
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                        .cornerRadius(12)
+                    )
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
                 }
-                .padding(.top, 8)
+                .buttonStyle(PlainButtonStyle())
+                // Add hover and press effects
+                .onHover { hovering in
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        if hovering {
+                            // Hover effect
+                        }
+                    }
+                }
+                .pressAction(onPress: {
+                    // Press effect
+                }, onRelease: {
+                    // Release effect
+                })
+
+             
+
+
+
             }
             .padding(24)
             .background(AppColors.messageBackground.opacity(0.95))
