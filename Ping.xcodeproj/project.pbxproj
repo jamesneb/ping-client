@@ -13,6 +13,7 @@
 		D4145C1F2D4D9DB300EAF352 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = D4145C1E2D4D9DB300EAF352 /* Shaders.metal */; };
 		D41623262D50082500A5463C /* websocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41623252D50082500A5463C /* websocket.swift */; };
 		D41BD3F02D5BEEBE00B80464 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41BD3EF2D5BEEBE00B80464 /* LoginView.swift */; };
+		D41BD3F22D5BF7A600B80464 /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41BD3F12D5BF7A200B80464 /* SignupView.swift */; };
 		D44349D02D506A8200F705D9 /* AudioCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */; };
 		D44349D22D506ADA00F705D9 /* AudioMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44349D12D506ADA00F705D9 /* AudioMeterView.swift */; };
 		D4B42C452D52E844006EA7C9 /* PerlinBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */; };
@@ -46,6 +47,7 @@
 		D41623222D4FEB0600A5463C /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		D41623252D50082500A5463C /* websocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = websocket.swift; sourceTree = "<group>"; };
 		D41BD3EF2D5BEEBE00B80464 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		D41BD3F12D5BF7A200B80464 /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureView.swift; sourceTree = "<group>"; };
 		D44349D12D506ADA00F705D9 /* AudioMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMeterView.swift; sourceTree = "<group>"; };
 		D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerlinBackgroundView.swift; sourceTree = "<group>"; };
@@ -115,6 +117,7 @@
 				D41623252D50082500A5463C /* websocket.swift */,
 				D4145C1E2D4D9DB300EAF352 /* Shaders.metal */,
 				D41BD3EF2D5BEEBE00B80464 /* LoginView.swift */,
+				D41BD3F12D5BF7A200B80464 /* SignupView.swift */,
 				D4145C182D4D979700EAF352 /* CameraView.swift */,
 				D44349D12D506ADA00F705D9 /* AudioMeterView.swift */,
 				D4145C162D4D959700EAF352 /* UserData.swift */,
@@ -292,6 +295,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D41BD3F22D5BF7A600B80464 /* SignupView.swift in Sources */,
 				D41623262D50082500A5463C /* websocket.swift in Sources */,
 				D4145C152D4CB97B00EAF352 /* tutorial.swift in Sources */,
 				D4B42C452D52E844006EA7C9 /* PerlinBackgroundView.swift in Sources */,
