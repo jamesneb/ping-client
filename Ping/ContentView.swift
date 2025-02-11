@@ -357,5 +357,5 @@ extension View {
 }
 
 #Preview {
-    ContentView()
+    LoginView()
 }
