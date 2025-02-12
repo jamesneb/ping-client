@@ -1,5 +1,52 @@
 import Foundation
 import SwiftUI
+enum SignupError: Error {
+    case networkError(Error)
+    case invalidResponse
+    case decodingError(Error)
+}
+
+struct SignupResponse: Codable {
+    // Define the structure of your signup response
+    // For example:
+    let userId: String?
+    let message: String?
+}
+
+func callSignupEP(username: String, password: String, email: String, firstname: String, lastname: String) async throws -> SignupResponse {
+    guard let url = URL(string: "http://localhost:8080/signup") else {
+        throw SignupError.invalidResponse
+    }
+    
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    
+    let jsonBody: [String: Any] = [
+        "username": username,
+        "password": password,
+        "email": email,
+        "firstName": firstname,
+        "lastName": lastname
+    ]
+    
+    do {
+        let jsonData = try JSONSerialization.data(withJSONObject: jsonBody, options: [])
+        request.httpBody = jsonData
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        
+        let decoder = JSONDecoder()
+        let responseData = try decoder.decode(SignupResponse.self, from: data)
+        return responseData
+    } catch let error as URLError {
+        throw SignupError.networkError(error)
+    } catch let error as DecodingError {
+        throw SignupError.decodingError(error)
+    } catch {
+        throw SignupError.networkError(error)
+    }
+}
 
 public struct SignupView: View {
     @State private var noiseImage: NSImage?
@@ -8,6 +55,8 @@ public struct SignupView: View {
     @State private var firstName: String = ""
     @State private var lastName: String = ""
     @State private var email: String = ""
+    
+    
     
     public var body: some View {
         ZStack {
@@ -50,7 +99,7 @@ public struct SignupView: View {
                 }
                 
                 // Sign Up Button
-                Button(action: {
+                Button(action:  { Task { try await callSignupEP(username: username, password: password, email: email, firstname: firstName, lastname: lastName)}
                     // Sign up action
                 }) {
                     HStack(spacing: 8) {
