@@ -7,15 +7,28 @@ struct PingApp: App {
     
     var body: some Scene {
         WindowGroup {
-            SignupView()
-                .environmentObject(urlHandler)
-                .onAppear {
-                    NotificationCenter.default.addObserver(forName: NSNotification.Name("HandleURL"), object: nil, queue: .main) { notification in
-                        if let url = notification.object as? URL {
-                            urlHandler.handleURL(url)
-                        }
+            // Add this switch statement to handle different routes
+            Group {
+                switch urlHandler.currentRoute {
+                case .login:
+                    LoginView()
+                case .signup:
+                    SignupView()
+                case .lobby:
+                    LoginView()
+                case .meeting:
+                    LoginView()
+               
+                }
+            }
+            .environmentObject(urlHandler)
+            .onAppear {
+                NotificationCenter.default.addObserver(forName: NSNotification.Name("HandleURL"), object: nil, queue: .main) { notification in
+                    if let url = notification.object as? URL {
+                        urlHandler.handleURL(url)
                     }
                 }
+            }
         }
         .handlesExternalEvents(matching: Set(arrayLiteral: "*"))
     }
