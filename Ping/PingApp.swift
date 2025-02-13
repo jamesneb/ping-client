@@ -15,7 +15,7 @@ struct PingApp: App {
                 case .signup:
                     SignupView()
                 case .lobby:
-                    LoginView()
+                    ContentView()
                 case .meeting:
                     LoginView()
                
@@ -36,7 +36,7 @@ struct PingApp: App {
 
 
 class URLHandler: ObservableObject {
-    @Published var currentRoute: Route = .login
+    @Published var currentRoute: Route = .lobby
     
     enum Route {
         case login
@@ -58,7 +58,7 @@ class URLHandler: ObservableObject {
         case "login":
             currentRoute = .login
         default:
-            currentRoute = .login
+            currentRoute = .lobby
         }
     }
 }

@@ -4,6 +4,7 @@ import AppKit
 
 struct AudioCaptureView: NSViewRepresentable {
     @Binding var inputGain: Float
+    @Binding var isAudioEnabled: Bool  // Add this
     
     class Coordinator: NSObject {
         var captureSession: AVCaptureSession?
@@ -67,6 +68,14 @@ struct AudioCaptureView: NSViewRepresentable {
         func updateInputGain(_ gain: Float) {
             self.inputGain = gain
         }
+        
+        func toggleAudio(_ isEnabled: Bool) {
+            if isEnabled {
+                captureSession?.startRunning()
+            } else {
+                captureSession?.stopRunning()
+            }
+        }
     }
     
     func makeCoordinator() -> Coordinator {
@@ -83,6 +92,7 @@ struct AudioCaptureView: NSViewRepresentable {
     
     func updateNSView(_ nsView: NSView, context: Context) {
         context.coordinator.updateInputGain(inputGain)
+        context.coordinator.toggleAudio(isAudioEnabled)
     }
 }
 
@@ -90,13 +100,11 @@ extension AudioCaptureView.Coordinator: AVCaptureAudioDataOutputSampleBufferDele
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard let audioBuffer = try? sampleBuffer.audioBufferList() else { return }
         
-        // Get the first buffer (assuming mono audio)
         let buffer = audioBuffer.mBuffers
         
         guard let data = buffer.mData else { return }
         let length = Int(buffer.mDataByteSize) / MemoryLayout<Float>.size
         
-        // Apply gain to the samples
         let ptr = data.assumingMemoryBound(to: Float.self)
         for i in 0..<length {
             ptr[i] *= inputGain
@@ -125,5 +133,67 @@ extension CMSampleBuffer {
         }
         
         return audioBufferList
+    }
+}
+
+// Styled container view
+struct StyledAudioCaptureView: View {
+    @Binding var inputGain: Float
+    @State private var isAudioEnabled: Bool = true
+    @State private var isHovering: Bool = false
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Header with title and toggle button
+            HStack {
+                Text("Audio Input")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                
+                Spacer()
+                
+                Button(action: {
+                    isAudioEnabled.toggle()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: isAudioEnabled ? "mic.fill" : "mic.slash.fill")
+                            .font(.system(size: 12))
+                        if isHovering {
+                            Text(isAudioEnabled ? "Disable" : "Enable")
+                                .font(.system(size: 12))
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        LinearGradient(
+                            gradient: isAudioEnabled ? AppColors.toggleMicrophoneGradient : AppColors.cameraGradient,
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .cornerRadius(8)
+                    .foregroundColor(.white)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .onHover { hovering in
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isHovering = hovering
+                    }
+                }
+            }
+            
+            // Audio capture view
+            AudioCaptureView(inputGain: $inputGain, isAudioEnabled: $isAudioEnabled)
+                .frame(height: 40)  // Adjust as needed
+        }
+        .padding(16)
+        .background(AppColors.messageBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(AppColors.inputBorder, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
 }

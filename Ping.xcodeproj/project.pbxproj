@@ -15,7 +15,6 @@
 		D41BD3F02D5BEEBE00B80464 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41BD3EF2D5BEEBE00B80464 /* LoginView.swift */; };
 		D41BD3F22D5BF7A600B80464 /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41BD3F12D5BF7A200B80464 /* SignupView.swift */; };
 		D44349D02D506A8200F705D9 /* AudioCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */; };
-		D44349D22D506ADA00F705D9 /* AudioMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44349D12D506ADA00F705D9 /* AudioMeterView.swift */; };
 		D4B42C452D52E844006EA7C9 /* PerlinBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */; };
 /* End PBXBuildFile section */
 
@@ -49,7 +48,6 @@
 		D41BD3EF2D5BEEBE00B80464 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		D41BD3F12D5BF7A200B80464 /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureView.swift; sourceTree = "<group>"; };
-		D44349D12D506ADA00F705D9 /* AudioMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMeterView.swift; sourceTree = "<group>"; };
 		D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerlinBackgroundView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -64,6 +62,26 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		D404BEE72D5DC17900267B54 /* Domain */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		D404BEF52D5DC20300267B54 /* Infrastructure */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Infrastructure;
+			sourceTree = "<group>";
+		};
+		D404BEFE2D5DC28100267B54 /* Application */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Application;
+			sourceTree = "<group>";
+		};
+		D404BF0F2D5E4EA200267B54 /* Presentation */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Presentation;
+			sourceTree = "<group>";
+		};
 		D4145BE82D4C65BE00EAF352 /* Ping */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -112,6 +130,10 @@
 		D4145BDD2D4C65BE00EAF352 = {
 			isa = PBXGroup;
 			children = (
+				D404BF0F2D5E4EA200267B54 /* Presentation */,
+				D404BEFE2D5DC28100267B54 /* Application */,
+				D404BEF52D5DC20300267B54 /* Infrastructure */,
+				D404BEE72D5DC17900267B54 /* Domain */,
 				D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */,
 				D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */,
 				D41623252D50082500A5463C /* websocket.swift */,
@@ -119,7 +141,6 @@
 				D41BD3EF2D5BEEBE00B80464 /* LoginView.swift */,
 				D41BD3F12D5BF7A200B80464 /* SignupView.swift */,
 				D4145C182D4D979700EAF352 /* CameraView.swift */,
-				D44349D12D506ADA00F705D9 /* AudioMeterView.swift */,
 				D4145C162D4D959700EAF352 /* UserData.swift */,
 				D4145C142D4CB97B00EAF352 /* tutorial.swift */,
 				D4145BE82D4C65BE00EAF352 /* Ping */,
@@ -164,6 +185,10 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				D404BEE72D5DC17900267B54 /* Domain */,
+				D404BEF52D5DC20300267B54 /* Infrastructure */,
+				D404BEFE2D5DC28100267B54 /* Application */,
+				D404BF0F2D5E4EA200267B54 /* Presentation */,
 				D4145BE82D4C65BE00EAF352 /* Ping */,
 			);
 			name = Ping;
@@ -301,7 +326,6 @@
 				D4B42C452D52E844006EA7C9 /* PerlinBackgroundView.swift in Sources */,
 				D44349D02D506A8200F705D9 /* AudioCaptureView.swift in Sources */,
 				D4145C1F2D4D9DB300EAF352 /* Shaders.metal in Sources */,
-				D44349D22D506ADA00F705D9 /* AudioMeterView.swift in Sources */,
 				D41BD3F02D5BEEBE00B80464 /* LoginView.swift in Sources */,
 				D4145C172D4D959700EAF352 /* UserData.swift in Sources */,
 				D4145C192D4D979700EAF352 /* CameraView.swift in Sources */,

@@ -2,31 +2,55 @@ import Foundation
 import SwiftUI
 
 struct LoginResponse: Codable {
-    // Define the structure of your signup response
-    // For example:
     let userId: String?
     let message: String?
 }
 
 enum LoginError: Error {
     case invalidResponse
-  
+    case invalidData
+    case networkError
 }
 
 func callLoginEP(username: String, password: String) async throws -> LoginResponse {
-    guard let URL = URL(string:"http://localhost:8080/login") else {
+    guard let url = URL(string: "http://localhost:8080/login") else {
         throw LoginError.invalidResponse
     }
     
-    var request = URLRequest(url: URL)
+    var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     
-    let jsonBody: [String: Any] = ["username": username, "password": password]
-    let jsonData = try JSONSerialization.data(withJSONObject: jsonBody, options: [])
+    // Create a Codable struct for the request body
+    struct LoginRequest: Codable {
+        let username: String
+        let password: String
+    }
+    
+    let loginRequest = LoginRequest(username: username, password: password)
+    let jsonData = try JSONEncoder().encode(loginRequest)
     request.httpBody = jsonData
     
-    let (data, _) = try await URLSession.shared.data(for: request)
+    do {
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw LoginError.networkError
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw LoginError.invalidResponse
+        }
+        
+        let decoder = JSONDecoder()
+        return try decoder.decode(LoginResponse.self, from: data)
+    } catch let error as DecodingError {
+        print("Decoding error: \(error)")
+        throw LoginError.invalidData
+    } catch {
+        print("Network error: \(error)")
+        throw LoginError.networkError
+    }
 }
 
 public struct LoginView: View {
@@ -145,8 +169,7 @@ public struct LoginView: View {
 
 // Color definitions remain the same
 extension AppColors {
-    static let inputBackground = Color(.sRGB, red: 0.98, green: 0.98, blue: 0.98, opacity: 1)
-    static let inputBorder = Color(.sRGB, red: 0.9, green: 0.9, blue: 0.9, opacity: 1)
+  
     static let primaryText = Color(.sRGB, red: 0.1, green: 0.1, blue: 0.1, opacity: 1)
     static let secondaryText = Color(.sRGB, red: 0.6, green: 0.6, blue: 0.6, opacity: 1)
     static let buttonShadow = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 0.1)
