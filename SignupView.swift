@@ -54,6 +54,8 @@ public struct SignupView: View {
    @State private var firstName: String = ""
    @State private var lastName: String = ""
    @State private var email: String = ""
+   @State private var showToast: Bool = false
+   @State private var toastMessage: String = ""
    @EnvironmentObject private var urlHandler: URLHandler
    
    public var body: some View {
@@ -124,11 +126,20 @@ public struct SignupView: View {
                                firstname: firstName,
                                lastname: lastName
                            )
-                           if response.userId != nil {
-                               urlHandler.currentRoute = .lobby
+                           if response.userId != nil || response.message ?? "no" == "User created successfully" {
+                               SoundManager.shared.playSuccessSound()
+                               urlHandler.currentRoute = .controlPanel
+                           } else {
+                               showToast(message: response.message ?? "Signup failed")
                            }
+                       } catch SignupError.networkError(let error) {
+                           showToast(message: "Network error: \(error.localizedDescription)")
+                       } catch SignupError.invalidResponse {
+                           showToast(message: "Invalid response from server")
+                       } catch SignupError.decodingError {
+                           showToast(message: "Error processing server response")
                        } catch {
-                           print("Signup error: \(error)")
+                           showToast(message: "An unexpected error occurred")
                        }
                    }
                }) {
@@ -173,9 +184,35 @@ public struct SignupView: View {
            .cornerRadius(16)
            .shadow(color: Color.black.opacity(0.15), radius: 15, x: 0, y: 5)
            .frame(width: 320)
+           
+           // Toast overlay
+           if showToast {
+               VStack {
+                   Spacer()
+                   ToastView(message: toastMessage)
+                       .padding(.bottom, 32)
+               }
+               .transition(AnyTransition.move(edge: .bottom).combined(with: .opacity))
+               .animation(.easeInOut(duration: 1), value: showToast)
+           }
        }
        .onAppear {
            noiseImage = loadNoiseImage(from: "background")
+       }
+   }
+   
+   private func showToast(message: String) {
+       toastMessage = message
+       withAnimation(.easeInOut(duration: 0.8)) {
+           showToast = true
+       }
+       SoundManager.shared.playNotificationSound()
+       
+       // Automatically hide the toast after 3 seconds
+       DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+           withAnimation(.easeInOut(duration: 0.8)) {
+               showToast = false
+           }
        }
    }
    

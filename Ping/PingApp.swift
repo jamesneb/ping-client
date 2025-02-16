@@ -17,7 +17,9 @@ struct PingApp: App {
                 case .lobby:
                     ContentView()
                 case .meeting:
-                    LoginView()
+                    MeetingRoomView()
+                case .controlPanel:
+                    ControlPanelView()
                
                 }
             }
@@ -43,6 +45,7 @@ class URLHandler: ObservableObject {
         case signup
         case lobby
         case meeting
+        case controlPanel
     }
     
     func handleURL(_ url: URL) {
@@ -57,6 +60,8 @@ class URLHandler: ObservableObject {
             currentRoute = .meeting
         case "login":
             currentRoute = .login
+        case "controlPanel":
+            currentRoute = .controlPanel
         default:
             currentRoute = .lobby
         }

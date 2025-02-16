@@ -15,7 +15,11 @@
 		D41BD3F02D5BEEBE00B80464 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41BD3EF2D5BEEBE00B80464 /* LoginView.swift */; };
 		D41BD3F22D5BF7A600B80464 /* SignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41BD3F12D5BF7A200B80464 /* SignupView.swift */; };
 		D44349D02D506A8200F705D9 /* AudioCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */; };
+		D4B02F242D6119170068D4C7 /* ControlPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B02F232D6119170068D4C7 /* ControlPanelView.swift */; };
+		D4B02F262D61266C0068D4C7 /* success.wav in Resources */ = {isa = PBXBuildFile; fileRef = D4B02F252D61266C0068D4C7 /* success.wav */; };
+		D4B02F2D2D614B640068D4C7 /* MeetingRoomView 2.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B02F2C2D614B640068D4C7 /* MeetingRoomView 2.swift */; };
 		D4B42C452D52E844006EA7C9 /* PerlinBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */; };
+		D4FC20F02D6019B3000D3097 /* InputError 3.wav in Resources */ = {isa = PBXBuildFile; fileRef = D4FC20EF2D6019B3000D3097 /* InputError 3.wav */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,7 +52,12 @@
 		D41BD3EF2D5BEEBE00B80464 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		D41BD3F12D5BF7A200B80464 /* SignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupView.swift; sourceTree = "<group>"; };
 		D44349CF2D506A8200F705D9 /* AudioCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureView.swift; sourceTree = "<group>"; };
+		D4B02F232D6119170068D4C7 /* ControlPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlPanelView.swift; sourceTree = "<group>"; };
+		D4B02F252D61266C0068D4C7 /* success.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = success.wav; sourceTree = "<group>"; };
+		D4B02F2B2D614B580068D4C7 /* Untitled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Untitled.swift; sourceTree = "<group>"; };
+		D4B02F2C2D614B640068D4C7 /* MeetingRoomView 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeetingRoomView 2.swift"; sourceTree = "<group>"; };
 		D4B42C442D52E83D006EA7C9 /* PerlinBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerlinBackgroundView.swift; sourceTree = "<group>"; };
+		D4FC20EF2D6019B3000D3097 /* InputError 3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "InputError 3.wav"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -130,6 +139,9 @@
 		D4145BDD2D4C65BE00EAF352 = {
 			isa = PBXGroup;
 			children = (
+				D4B02F2C2D614B640068D4C7 /* MeetingRoomView 2.swift */,
+				D4B02F2B2D614B580068D4C7 /* Untitled.swift */,
+				D4B02F232D6119170068D4C7 /* ControlPanelView.swift */,
 				D404BF0F2D5E4EA200267B54 /* Presentation */,
 				D404BEFE2D5DC28100267B54 /* Application */,
 				D404BEF52D5DC20300267B54 /* Infrastructure */,
@@ -148,6 +160,8 @@
 				D4145C042D4C65BF00EAF352 /* PingUITests */,
 				D41623212D4FEB0600A5463C /* Frameworks */,
 				D4145BE72D4C65BE00EAF352 /* Products */,
+				D4FC20EF2D6019B3000D3097 /* InputError 3.wav */,
+				D4B02F252D61266C0068D4C7 /* success.wav */,
 			);
 			sourceTree = "<group>";
 		};
@@ -296,6 +310,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4B02F262D61266C0068D4C7 /* success.wav in Resources */,
+				D4FC20F02D6019B3000D3097 /* InputError 3.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -321,12 +337,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				D41BD3F22D5BF7A600B80464 /* SignupView.swift in Sources */,
+				D4B02F2D2D614B640068D4C7 /* MeetingRoomView 2.swift in Sources */,
 				D41623262D50082500A5463C /* websocket.swift in Sources */,
 				D4145C152D4CB97B00EAF352 /* tutorial.swift in Sources */,
 				D4B42C452D52E844006EA7C9 /* PerlinBackgroundView.swift in Sources */,
 				D44349D02D506A8200F705D9 /* AudioCaptureView.swift in Sources */,
 				D4145C1F2D4D9DB300EAF352 /* Shaders.metal in Sources */,
 				D41BD3F02D5BEEBE00B80464 /* LoginView.swift in Sources */,
+				D4B02F242D6119170068D4C7 /* ControlPanelView.swift in Sources */,
 				D4145C172D4D959700EAF352 /* UserData.swift in Sources */,
 				D4145C192D4D979700EAF352 /* CameraView.swift in Sources */,
 			);

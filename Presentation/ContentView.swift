@@ -1,18 +1,23 @@
-// internal/presentation/ContentView.swift
 import SwiftUI
 
 struct ContentView: View {
-    @State private var noiseImage: NSImage?
+    // MARK: - State Management
+    @StateObject private var viewModel = WebSocketViewModel()
     @State private var nickname: String = UserData().nickname
     @State private var passcode: String = ""
-    @FocusState private var isDisplayNameFocused: Bool
-    @FocusState private var isPasscodeFocused: Bool
-    @StateObject private var viewModel = WebSocketViewModel()
+    @State private var noiseImage: NSImage?
+    
+    // URLHandler for navigation
     @EnvironmentObject private var urlHandler: URLHandler
     
+    // Focus states for form fields
+    @FocusState private var isDisplayNameFocused: Bool
+    @FocusState private var isPasscodeFocused: Bool
+    
+    // MARK: - Main View Body
     var body: some View {
         ZStack {
-            // Background
+            // Background texture layer
             if let image = noiseImage {
                 Image(nsImage: image)
                     .resizable()
@@ -21,22 +26,15 @@ struct ContentView: View {
                     .ignoresSafeArea()
             }
             
+            // Main Content Layer
             VStack(spacing: 32) {
-                // Header
-                HeaderView(urlHandler: urlHandler)
+                headerSection
                 
-                // Main Content
+                // Main content stack
                 VStack(spacing: 24) {
-                    // Media Controls Card
-                    MediaControlsCard(viewModel: viewModel)
-                    
-                    // User Info Card
-                    UserInfoCard(nickname: $nickname, passcode: $passcode)
-                    
-                    // Participants Section
-                    if !viewModel.receivedMessage.isEmpty {
-                        ParticipantsView(message: viewModel.receivedMessage)
-                    }
+                    mediaControlsSection
+                    userCredentialsSection
+                    participantsIndicator
                 }
             }
             .padding(32)
@@ -44,43 +42,35 @@ struct ContentView: View {
             .frame(minWidth: 700, minHeight: 850)
         }
         .onAppear {
-            noiseImage = loadNoiseImage(from: "background")
-            viewModel.connect()
-            viewModel.sendMessage("GET PARTICIPANTS")
+            setupInitialState()
         }
     }
-}
-
-// MARK: - Subviews
-struct HeaderView: View {
-    let urlHandler: URLHandler
     
-    var body: some View {
+    // MARK: - View Sections
+    private var headerSection: some View {
         HStack {
-            Text("Meeting Room")
-                .font(.system(size: 24, weight: .bold))
+            Button(action: { urlHandler.currentRoute = .login }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .medium))
+                    Text("Back")
+                        .font(.system(size: 14, weight: .medium))
+                }
                 .foregroundColor(AppColors.textPrimary)
+            }
+            .buttonStyle(PlainButtonStyle())
             
             Spacer()
             
-            Button(action: {
-                urlHandler.currentRoute = .login
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(AppColors.textSecondary)
-            }
-            .buttonStyle(PlainButtonStyle())
+            Text("Join Meeting")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(AppColors.textPrimary)
         }
     }
-}
-
-struct MediaControlsCard: View {
-    @ObservedObject var viewModel: WebSocketViewModel
     
-    var body: some View {
+    private var mediaControlsSection: some View {
         VStack(spacing: 20) {
-            // Camera Section
+            // Camera preview section
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "video.fill")
@@ -89,7 +79,7 @@ struct MediaControlsCard: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
-                    DisableCameraButton()
+                    AudioMeterView()
                 }
                 
                 CameraView()
@@ -104,7 +94,7 @@ struct MediaControlsCard: View {
             Divider()
                 .background(AppColors.inputBorder)
             
-            // Audio Section
+            // Audio controls section
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "waveform")
@@ -113,6 +103,7 @@ struct MediaControlsCard: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
+                    
                 }
                 
                 AudioMeterView()
@@ -123,29 +114,45 @@ struct MediaControlsCard: View {
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
     }
-}
-
-struct UserInfoCard: View {
-    @Binding var nickname: String
-    @Binding var passcode: String
     
-    var body: some View {
+    private var userCredentialsSection: some View {
         VStack(spacing: 16) {
             VStack(spacing: 20) {
-                // Display Name Field
-                formField(title: "Display Name",
-                         text: $nickname,
-                         icon: "person.fill")
+                formField(
+                    title: "Display Name",
+                    text: $nickname,
+                    icon: "person.fill",
+                    isFocused: $isDisplayNameFocused
+                )
                 
-                // Meeting Passcode Field
-                formField(title: "Meeting Passcode",
-                         text: $passcode,
-                         icon: "lock.fill",
-                         isSecure: true)
+                formField(
+                    title: "Meeting Passcode",
+                    text: $passcode,
+                    icon: "lock.fill",
+                    isSecure: true,
+                    isFocused: $isPasscodeFocused
+                )
             }
             
-            ConnectButton()
-                .frame(width: 120)
+            // Connect button
+            Button(action: handleConnect) {
+                Text("Connect")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(height: 36)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        LinearGradient(
+                            gradient: AppColors.badgeGradient,
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .cornerRadius(12)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .frame(width: 120)
+            .disabled(nickname.isEmpty || passcode.isEmpty)
         }
         .padding(24)
         .background(AppColors.messageBackground)
@@ -153,7 +160,50 @@ struct UserInfoCard: View {
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
     }
     
-    private func formField(title: String, text: Binding<String>, icon: String, isSecure: Bool = false) -> some View {
+    private var participantsIndicator: some View {
+        HStack {
+            Image(systemName: "person.2.fill")
+                .foregroundColor(AppColors.textSecondary)
+            Text("Participants")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppColors.textPrimary)
+            
+            // Add participant count badge
+            Circle()
+                .fill(LinearGradient(
+                    gradient: AppColors.badgeGradient,
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
+                .frame(width: 20, height: 20)
+                .overlay(
+                    Text("3")  // Replace with actual count
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                )
+            
+            if !viewModel.receivedMessage.isEmpty {
+                Text(viewModel.receivedMessage)
+                    .font(.system(size: 14))
+                    .foregroundColor(AppColors.textPrimary)
+            }
+            
+            Spacer()
+        }
+        .padding(24)
+        .background(AppColors.messageBackground)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
+    }
+    
+    // MARK: - Helper Views
+    private func formField(
+        title: String,
+        text: Binding<String>,
+        icon: String,
+        isSecure: Bool = false,
+        isFocused: FocusState<Bool>.Binding
+    ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 12, weight: .medium))
@@ -167,9 +217,11 @@ struct UserInfoCard: View {
                 if isSecure {
                     SecureField("", text: text)
                         .textFieldStyle(.plain)
+                        .focused(isFocused)
                 } else {
                     TextField("", text: text)
                         .textFieldStyle(.plain)
+                        .focused(isFocused)
                 }
             }
             .frame(height: 36)
@@ -182,45 +234,29 @@ struct UserInfoCard: View {
             )
         }
     }
-}
-
-struct ParticipantsView: View {
-    let message: String
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "person.2.fill")
-                    .foregroundColor(AppColors.textSecondary)
-                Text("Participants")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(AppColors.textPrimary)
-                
-                Circle()
-                    .fill(LinearGradient(gradient: AppColors.badgeGradient,
-                                       startPoint: .top,
-                                       endPoint: .bottom))
-                    .frame(width: 20, height: 20)
-                    .overlay(
-                        Text("1")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                    )
-                Spacer()
-            }
-            
-            Text(message)
-                .font(.system(size: 14))
-                .foregroundColor(AppColors.textPrimary)
+    // MARK: - Helper Methods
+    private func setupInitialState() {
+        noiseImage = loadNoiseImage(from: "background")
+        viewModel.connect()
+        viewModel.sendMessage("GET PARTICIPANTS")
+    }
+    
+    private func handleConnect() {
+        // Save nickname for future use
+        UserData.shared.nickname = nickname
+        
+        // Validate inputs
+        guard !nickname.isEmpty && !passcode.isEmpty else {
+            return
         }
-        .padding(24)
-        .background(AppColors.messageBackground)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
+        
+        // Navigate to meeting view using URLHandler
+        urlHandler.currentRoute = .meeting
     }
 }
 
-// Preview provider for development
+// MARK: - Preview Provider
 #Preview {
     ContentView()
         .environmentObject(URLHandler())

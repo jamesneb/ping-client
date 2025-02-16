@@ -7,20 +7,17 @@ struct AppColors {
         Color(red: 0.95, green: 0.95, blue: 0.95)
     ])
     
-    static let primaryGradient = Gradient(colors: [
-        Color(red: 0.0, green: 0.47, blue: 0.87),
-        Color(red: 0.0, green: 0.42, blue: 0.78)
-    ])
+   
     
     static let cameraGradient = Gradient(colors: [
-        Color(red: 0.83, green: 0.83, blue: 0.83),
-        Color(red: 0.75, green: 0.75, blue: 0.75)
-    ])
-    
-    static let cameraPressedGradient = Gradient(colors: [
-        Color(red: 0.75, green: 0.75, blue: 0.75),
-        Color(red: 0.67, green: 0.67, blue: 0.67)
-    ])
+           Color(NSColor(red: 0.2, green: 0.4, blue: 1.0, alpha: 1)),
+           Color(NSColor(red: 0.3, green: 0.5, blue: 1.0, alpha: 1))
+       ])
+       
+       static let cameraPressedGradient = Gradient(colors: [
+           Color(NSColor(red: 0.15, green: 0.35, blue: 0.9, alpha: 1)),
+           Color(NSColor(red: 0.25, green: 0.45, blue: 0.9, alpha: 1))
+       ])
     
     static let toggleMicrophoneGradient = Gradient(colors: [
         Color(red: 0.87, green: 0.0, blue: 0.0),
@@ -36,7 +33,7 @@ struct AppColors {
         Color(red: 0.0, green: 0.0, blue: 0.0),
         Color(red: 0.4, green: 0.4, blue: 0.4)
     ])
-    
+    static let primaryGradient = Gradient(colors: [Color.blue, Color.purple])
     static let messageBackground = Color.white.opacity(0.95)
     static let inputBackground = Color(red: 0.98, green: 0.98, blue: 0.98)
     static let inputBorder = Color(red: 0.9, green: 0.9, blue: 0.9)
