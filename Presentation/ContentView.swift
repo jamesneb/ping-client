@@ -48,23 +48,31 @@ struct ContentView: View {
     
     // MARK: - View Sections
     private var headerSection: some View {
-        HStack {
-            Button(action: { urlHandler.currentRoute = .login }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .medium))
-                    Text("Back")
-                        .font(.system(size: 14, weight: .medium))
+        ZStack {
+            HStack {
+                Button(action: { urlHandler.currentRoute = .login }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .medium))
+                        Text("Back")
+                            .font(.system(size: 14, weight: .medium))
+                    }
                 }
-                .foregroundColor(AppColors.textPrimary)
+                .buttonStyle(PlainButtonStyle())
+                .modifier(BaseButton(
+                    gradient: AppColors.badgeGradient,
+                    pressedGradient: AppColors.badgeGradient
+                ))
+                
+                Spacer()
             }
-            .buttonStyle(PlainButtonStyle())
-            
-            Spacer()
+            .padding(.top, 16) // Add top padding for the back button
             
             Text("Join Meeting")
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(AppColors.textPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 16) // Match padding with back button
         }
     }
     
@@ -79,7 +87,6 @@ struct ContentView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
-                    AudioMeterView()
                 }
                 
                 CameraView()
@@ -103,16 +110,17 @@ struct ContentView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
-                    
                 }
                 
-                AudioMeterView()
+                // Center the AudioMeterView
+                HStack {
+                    Spacer()
+                    AudioMeterView()
+                    Spacer()
+                }
             }
         }
-        .padding(24)
-        .background(AppColors.messageBackground)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
+        .modifier(BaseContainer())
     }
     
     private var userCredentialsSection: some View {
@@ -138,26 +146,46 @@ struct ContentView: View {
             Button(action: handleConnect) {
                 Text("Connect")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
                     .frame(height: 36)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        LinearGradient(
-                            gradient: AppColors.badgeGradient,
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                    .frame(width: 120)
+                    .foregroundColor(Color(red: 0.45, green: 0.4, blue: 0.8)) // Subtle purple
+                    .background(Color(red: 0.98, green: 0.98, blue: 1.0)) // Very light purple
                     .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color(red: 0.45, green: 0.4, blue: 0.8).opacity(0.5),
+                                        Color(red: 0.45, green: 0.4, blue: 0.8).opacity(0.3)
+                                    ]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+                    .shadow(
+                        color: Color(red: 0.45, green: 0.4, blue: 0.8).opacity(0.1),
+                        radius: 4,
+                        x: 0,
+                        y: 2
+                    )
             }
             .buttonStyle(PlainButtonStyle())
-            .frame(width: 120)
             .disabled(nickname.isEmpty || passcode.isEmpty)
+            // Add hover effect
+            .onHover { hovering in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if hovering {
+                        NSCursor.pointingHand.push()
+                    } else {
+                        NSCursor.pop()
+                    }
+                }
+            }
         }
-        .padding(24)
-        .background(AppColors.messageBackground)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
+        .modifier(BaseContainer())
     }
     
     private var participantsIndicator: some View {
@@ -168,7 +196,6 @@ struct ContentView: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(AppColors.textPrimary)
             
-            // Add participant count badge
             Circle()
                 .fill(LinearGradient(
                     gradient: AppColors.badgeGradient,
@@ -177,7 +204,7 @@ struct ContentView: View {
                 ))
                 .frame(width: 20, height: 20)
                 .overlay(
-                    Text("3")  // Replace with actual count
+                    Text("3")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                 )
@@ -190,10 +217,7 @@ struct ContentView: View {
             
             Spacer()
         }
-        .padding(24)
-        .background(AppColors.messageBackground)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 2)
+        .modifier(BaseContainer())
     }
     
     // MARK: - Helper Views
@@ -224,14 +248,7 @@ struct ContentView: View {
                         .focused(isFocused)
                 }
             }
-            .frame(height: 36)
-            .padding(.horizontal, 12)
-            .background(AppColors.inputBackground)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(AppColors.inputBorder, lineWidth: 1)
-            )
+            .modifier(BaseInput())
         }
     }
     

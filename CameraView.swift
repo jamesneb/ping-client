@@ -88,56 +88,30 @@ struct CameraView: NSViewRepresentable {
 }
 
 // MARK: - Camera Control Button
+
 struct CameraControlButton: View {
     let icon: String
     let text: String
     var gradient: Gradient = AppColors.cameraGradient
     let action: () -> Void
-    @State private var isHovering = false
-    @State private var isPressed = false
     
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .imageScale(.medium)
-                
-                if isHovering {
-                    Text(text)
-                        .font(.system(size: 14, weight: .medium))
-                        .transition(.opacity)
-                }
+                Text(text)
+                    .font(.system(size: 14, weight: .medium))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                LinearGradient(
-                    gradient: isPressed ? AppColors.cameraPressedGradient : gradient,
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 2)
-            .foregroundColor(.white)
         }
         .buttonStyle(PlainButtonStyle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovering = hovering
-            }
-        }
-        .pressAction(onPress: {
-            isPressed = true
-        }, onRelease: {
-            isPressed = false
-        })
+        .modifier(BaseButton(
+            gradient: gradient,
+            pressedGradient: AppColors.cameraPressedGradient
+        ))
     }
 }
+
 
 // MARK: - Disable Camera Button
 struct DisableCameraButton: View {
