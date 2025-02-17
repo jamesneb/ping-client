@@ -22,8 +22,6 @@ extension View {
         self.modifier(PressAction(onPress: onPress, onRelease: onRelease))
     }
 }
-
-// MARK: - Camera View
 struct CameraView: NSViewRepresentable {
     class Coordinator: NSObject {
         var captureSession: AVCaptureSession?
@@ -35,6 +33,9 @@ struct CameraView: NSViewRepresentable {
         }
         
         func setupCamera(in view: NSView) {
+            // Stop any existing session first
+            stopCaptureSession()
+            
             guard let captureSession = captureSession else { return }
             
             guard let device = AVCaptureDevice.default(for: .video) else {
@@ -63,8 +64,22 @@ struct CameraView: NSViewRepresentable {
             captureSession.startRunning()
         }
         
+        func stopCaptureSession() {
+            if let session = captureSession, session.isRunning {
+                session.stopRunning()
+                // Remove all inputs
+                for input in session.inputs {
+                    session.removeInput(input)
+                }
+            }
+        }
+        
         func updateFrame(to bounds: CGRect) {
             previewLayer?.frame = bounds
+        }
+        
+        deinit {
+            stopCaptureSession()
         }
     }
     
@@ -81,9 +96,11 @@ struct CameraView: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
-            context.coordinator.updateFrame(to: nsView.bounds)
-        }
+        context.coordinator.updateFrame(to: nsView.bounds)
+    }
+    
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        coordinator.stopCaptureSession()
     }
 }
 

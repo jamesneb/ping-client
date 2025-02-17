@@ -1,5 +1,8 @@
 import SwiftUI
 
+
+
+
 @main
 struct PingApp: App {
     @StateObject private var urlHandler = URLHandler()
@@ -7,20 +10,28 @@ struct PingApp: App {
     
     var body: some Scene {
         WindowGroup {
-            // Add this switch statement to handle different routes
             Group {
                 switch urlHandler.currentRoute {
                 case .login:
                     LoginView()
+                        .frame(minWidth: 400, minHeight: 300)
                 case .signup:
                     SignupView()
+                        .frame(minWidth: 400, minHeight: 300)
                 case .lobby:
                     ContentView()
+                        .frame(minWidth: 800, minHeight: 800)
                 case .meeting:
                     MeetingRoomView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .onAppear {
+                            if let window = NSApplication.shared.windows.first {
+                                window.toggleFullScreen(nil)
+                            }
+                        }
                 case .controlPanel:
                     ControlPanelView()
-               
+                        .frame(minWidth: 500, minHeight: 400)
                 }
             }
             .environmentObject(urlHandler)
@@ -32,10 +43,11 @@ struct PingApp: App {
                 }
             }
         }
+        .windowStyle(.hiddenTitleBar)
         .handlesExternalEvents(matching: Set(arrayLiteral: "*"))
     }
 }
-
+// Rest of your URLHandler code remains the same
 
 class URLHandler: ObservableObject {
     @Published var currentRoute: Route = .lobby

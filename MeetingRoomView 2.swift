@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 import Foundation
 
 struct MeetingRoomView: View {
@@ -10,74 +11,202 @@ struct MeetingRoomView: View {
         Participant(id: "2", nickname: "Bob", isOnline: true, isMuted: true, isVideoEnabled: true),
         Participant(id: "3", nickname: "Charlie", isOnline: false, isMuted: false, isVideoEnabled: false),
         Participant(id: "4", nickname: "David", isOnline: true, isMuted: false, isVideoEnabled: true),
-        Participant(id: "5", nickname: "Eve", isOnline: true, isMuted: true, isVideoEnabled: false)
+        Participant(id: "5", nickname: "Eve", isOnline: true, isMuted: true, isVideoEnabled: false),
+        Participant(id: "6", nickname: "Frank", isOnline: true, isMuted: false, isVideoEnabled: true),
+        Participant(id: "7", nickname: "Grace", isOnline: false, isMuted: true, isVideoEnabled: false),
+        Participant(id: "8", nickname: "Henry", isOnline: true, isMuted: false, isVideoEnabled: true),
+        Participant(id: "9", nickname: "Ivy", isOnline: true, isMuted: true, isVideoEnabled: false),
+        Participant(id: "10", nickname: "Jack", isOnline: false, isMuted: false, isVideoEnabled: true),
+        Participant(id: "11", nickname: "Kelly", isOnline: true, isMuted: true, isVideoEnabled: false),
+        Participant(id: "12", nickname: "Liam", isOnline: true, isMuted: false, isVideoEnabled: true)
     ]
-    
+   
     var body: some View {
-        ZStack {
-            // Background Layer
-            if let image = noiseImage {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .ignoresSafeArea()
-            }
+        HStack(spacing: 0) {
+            ParticipantSidebar(participants: participants)
+                .frame(width: 120)
             
-            VStack {
-                // Participant Section
-                ScrollView(.horizontal, showsIndicators: true) {
-                    LazyHStack(spacing: 24) {
-                        ForEach(participants) { participant in
-                            UserAvatarBadge(
-                                initial: String(participant.nickname.prefix(1)),
-                                isOnline: participant.isOnline
-                            )
-                            .contextMenu {
-                                Button(action: {
-                                    // Toggle mute
-                                }) {
-                                    Label(participant.isMuted ? "Unmute" : "Mute",
-                                          systemImage: participant.isMuted ? "mic" : "mic.slash")
-                                }
-                                
-                                Button(action: {
-                                    // Toggle video
-                                }) {
-                                    Label(participant.isVideoEnabled ? "Disable Video" : "Enable Video",
-                                          systemImage: participant.isVideoEnabled ? "video.slash" : "video")
-                                }
-                                
-                                Divider()
-                                
-                                Button(role: .destructive, action: {
-                                    // Remove participant
-                                }) {
-                                    Label("Remove from Call", systemImage: "person.fill.xmark")
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 32)
+            ZStack {
+                if let image = noiseImage {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .ignoresSafeArea()
                 }
-                .frame(height: 120)
                 
-                Spacer()
-                
-                // Command Bar
-                CommandBar()
-                    .padding(.bottom, 32)
+                VStack(spacing: 0) {
+                    Spacer()
+                        .frame(maxHeight: 100)
+                    
+                    CameraView()
+                        .frame(
+                            minWidth: 400,
+                            idealWidth: 800,
+                            maxWidth: 800,
+                            minHeight: 300,
+                            idealHeight: 450,
+                            maxHeight: 450
+                        )
+                        .layoutPriority(1)
+                        .background(
+                            ZStack {
+                                Color.black.opacity(0.4)
+                                LinearGradient(
+                                    colors: [
+                                        Color(hex: "4338CA").opacity(0.1),
+                                        Color.clear
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            }
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            Color(hex: "4338CA").opacity(0.6),
+                                            Color(hex: "4338CA").opacity(0.3)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 2
+                                )
+                        )
+                        .shadow(color: Color(hex: "4338CA").opacity(0.2), radius: 10, x: 0, y: 4)
+                        .padding(.horizontal, 32)
+                    
+                    Spacer()
+                        .frame(minHeight: 50, maxHeight: 200)
+                    
+                    CommandBar()
+                        .padding(.bottom, 32)
+                        .padding(.horizontal, 32)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .onAppear {
             setupInitialState()
+        }.onDisappear {
+            // Clean up any existing camera sessions
+            if let window = NSApplication.shared.windows.first {
+                for view in window.contentView?.subviews ?? [] {
+                    if let cameraView = view as? NSView, cameraView.layer is AVCaptureVideoPreviewLayer {
+                        (cameraView.layer as? AVCaptureVideoPreviewLayer)?.session?.stopRunning()
+                    }
+                }
+            }
         }
     }
     
     private func setupInitialState() {
         noiseImage = loadNoiseImage(from: "background")
+        participants = participants.sorted(by: { $0.nickname < $1.nickname })
         viewModel.connect()
         viewModel.sendMessage("GET PARTICIPANTS")
+    }
+}
+
+
+
+
+
+
+struct ParticipantSidebar: View {
+    let participants: [Participant]
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                ForEach(participants) { participant in
+                    ParticipantBadgeWithMenu(participant: participant)
+                }
+            }
+            .padding(.vertical, 16)
+        }
+        .frame(width: 120)
+        .background(
+            ZStack {
+                Color.black.opacity(0.8)
+                    .background(.ultraThinMaterial)
+                
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.1),
+                        Color.white.opacity(0.05)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        )
+        .scrollIndicators(.visible)
+        .overlay(
+            CustomScrollbar(),
+            alignment: .trailing
+        )
+    }
+}
+
+struct CustomScrollbar: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        
+        DispatchQueue.main.async {
+            if let scrollView = view.enclosingScrollView {
+                scrollView.hasVerticalScroller = true
+                
+                if let scroller = scrollView.verticalScroller {
+                    scroller.alphaValue = 0.8
+                    scroller.layer?.backgroundColor = NSColor(Color(hex: "4338CA").opacity(0.3)).cgColor
+                }
+                
+                scrollView.drawsBackground = false
+                scrollView.backgroundColor = .clear
+            }
+        }
+        
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+struct ParticipantBadgeWithMenu: View {
+    let participant: Participant
+    @State private var isHovered = false
+    
+    var body: some View {
+        UserAvatarBadge(
+            initial: String(participant.nickname.prefix(1)),
+            isOnline: participant.isOnline
+        )
+        .onTapGesture { }
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .contextMenu {
+            Button(action: {}) {
+                Label(participant.isMuted ? "Unmute" : "Mute",
+                      systemImage: participant.isMuted ? "mic" : "mic.slash")
+            }
+            
+            Button(action: {}) {
+                Label(participant.isVideoEnabled ? "Disable Video" : "Enable Video",
+                      systemImage: participant.isVideoEnabled ? "video.slash" : "video")
+            }
+            
+            Divider()
+            
+            Button(role: .destructive, action: {}) {
+                Label("Remove from Call", systemImage: "person.fill.xmark")
+            }
+        }
     }
 }
 
@@ -88,32 +217,29 @@ struct CommandBar: View {
     var body: some View {
         HStack(spacing: 20) {
             CommandButton(icon: isMuted ? "mic.slash.fill" : "mic.fill",
-                         color: isMuted ? .red : Color(hex: "E5625E")) {
+                          color: Color(hex: "34495E")) {
                 isMuted.toggle()
             }
             
             CommandButton(icon: isVideoEnabled ? "video.fill" : "video.slash.fill",
-                         color: isVideoEnabled ? Color(hex: "E5625E") : .red) {
+                          color: Color(hex: "34495E")) {
                 isVideoEnabled.toggle()
             }
             
-            CommandButton(icon: "hand.raise.fill", color: Color(hex: "E5625E")) {
-                // Raise hand action
+            CommandButton(icon: "hand.raise.fill", color: Color(hex: "34495E")) {
             }
             
-            CommandButton(icon: "rectangle.3.group.fill", color: Color(hex: "E5625E")) {
-                // Layout action
+            CommandButton(icon: "rectangle.3.group.fill", color: Color(hex: "34495E")) {
             }
             
-            CommandButton(icon: "arrow.up.left.and.arrow.down.right", color: Color(hex: "E5625E")) {
-                // Share screen action
+            CommandButton(icon: "arrow.up.left.and.arrow.down.right", color: Color(hex: "34495E")) {
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.black.opacity(0.2))
+                .fill(Color(hex: "2C3E50"))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
@@ -129,56 +255,35 @@ struct CommandButton: View {
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(.white)
-                .frame(width: 44, height: 44)
-                .background(
-                    Circle()
-                        .fill(color)
-                        .shadow(color: color.opacity(0.5), radius: 8, x: 0, y: 4)
-                )
+            ZStack {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(.white.opacity(0.7))
+                    .offset(x: 0.5, y: 0.5)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+            }
+            .frame(width: 44, height: 44)
+            .background(
+                Circle()
+                    .fill(color)
+                    .overlay(
+                        Circle()
+                            .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+            )
         }
         .buttonStyle(CommandButtonStyle())
     }
 }
-
 struct CommandButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
-    }
-}
-
-// Keep your existing UserAvatarBadge implementation
-// ... [Previous UserAvatarBadge code here]
-
-// Keep your existing Color extension
-// ... [Previous Color extension code here]
-
-struct MeetingRoomView_Previews: PreviewProvider {
-    static var previews: some View {
-        MeetingRoomView()
-            .environmentObject(URLHandler())
-    }
-}
-struct UserCommandDock: View {
-    var body: some View {
-        ZStack {
-            HStack {
-                Button(action: { }) {
-                    Text("Poop")
-                }
-                .frame(width: 500, height: 50)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.indigo, style: StrokeStyle(lineWidth: 2))
-                )
-                .buttonStyle(.plain)
-                .background(.clear)
-            }
-        }
     }
 }
 
@@ -188,19 +293,17 @@ struct UserAvatarBadge: View {
     
     var body: some View {
         ZStack {
-            // Enhanced shadow effect with multiple layers
             Circle()
                 .fill(Color.black.opacity(0.1))
                 .frame(width: 84, height: 84)
                 .blur(radius: 8)
                 .offset(y: 4)
             
-            // Outer glow effect
             Circle()
                 .fill(
                     RadialGradient(
                         gradient: Gradient(colors: [
-                            Color(hex: "E5625E").opacity(0.3),
+                            Color(hex: "4338CA").opacity(0.3),
                             Color.clear
                         ]),
                         center: .center,
@@ -210,22 +313,17 @@ struct UserAvatarBadge: View {
                 )
                 .frame(width: 100, height: 100)
             
-            // Main avatar circle with gradient
             Circle()
                 .fill(
                     LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(hex: "E5625E").opacity(0.8),
-                            Color(hex: "E5625E")
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
+                        gradient: AppColors.primaryGradient,
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
                 )
-                .frame(width: 80, height: 80)
+                .frame(width: 50, height: 50)
                 .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
-            
-            // Inner highlight ring
+
             Circle()
                 .strokeBorder(
                     LinearGradient(
@@ -238,38 +336,34 @@ struct UserAvatarBadge: View {
                     ),
                     lineWidth: 2
                 )
-                .frame(width: 74, height: 74)
+                .frame(width: 44, height: 44)
                 .background(
                     Circle()
                         .fill(Color.white.opacity(0.1))
                         .blur(radius: 2)
                 )
             
-            // User's initial letter with subtle shadow
             Text(initial)
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(size: 20, weight: .bold))
                 .foregroundColor(.white)
                 .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 2)
             
-            // Enhanced online status indicator
             if isOnline {
                 ZStack {
-                    // Outer glow
                     Circle()
-                        .fill(Color(hex: "4AD1B3").opacity(0.3))
-                        .frame(width: 32, height: 32)
+                        .fill(Color(hex: "38BDF8").opacity(0.3))
+                        .frame(width: 16, height: 16)
                         .blur(radius: 4)
                     
-                    // Main indicator
                     Circle()
-                        .fill(Color(hex: "4AD1B3"))
-                        .frame(width: 24, height: 24)
+                        .fill(Color(hex: "A5F3FC"))
+                        .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
                                 .strokeBorder(Color.white, lineWidth: 2)
                         )
                 }
-                .offset(x: 28, y: 28)
+                .offset(x: 20, y: 20)
             }
         }
     }
@@ -287,7 +381,6 @@ extension Color {
     }
 }
 
-// MARK: - Preview Provider
 #Preview {
     MeetingRoomView()
         .environmentObject(URLHandler())

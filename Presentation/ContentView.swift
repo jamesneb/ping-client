@@ -131,7 +131,7 @@ struct ContentView: View {
                     text: $nickname,
                     icon: "person.fill",
                     isFocused: $isDisplayNameFocused
-                )
+                ).foregroundStyle(Color.black)
                 
                 formField(
                     title: "Meeting Passcode",
@@ -139,7 +139,7 @@ struct ContentView: View {
                     icon: "lock.fill",
                     isSecure: true,
                     isFocused: $isPasscodeFocused
-                )
+                ).foregroundStyle(Color.black)
             }
             
             // Connect button
