@@ -1,6 +1,27 @@
 // File: internal/presentation/components/BaseModifiers.swift
 import SwiftUI
 
+struct PressAction: ViewModifier {
+    let onPress: () -> Void
+    let onRelease: () -> Void
+    
+    func body(content: Content) -> some View {
+        content
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in onPress() }
+                    .onEnded { _ in onRelease() }
+            )
+    }
+}
+
+extension View {
+    func pressAction(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
+        self.modifier(PressAction(onPress: onPress, onRelease: onRelease))
+    }
+}
+
+
 struct BaseButton: ViewModifier {
     let gradient: Gradient
     let pressedGradient: Gradient

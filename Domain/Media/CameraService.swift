@@ -1,15 +1,19 @@
-// internal/infrastructure/media/CameraService.swift
 import AVFoundation
 import Combine
 import SwiftUI
 
 class CameraService: NSObject, CameraServiceProtocol {
     private let stateSubject = CurrentValueSubject<MediaState, Never>(.inactive)
-    private var captureSession: AVCaptureSession?
+    private(set) var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer?
+    @Published private(set) var isCapturing: Bool = false
     
     var state: AnyPublisher<MediaState, Never> {
         stateSubject.eraseToAnyPublisher()
+    }
+    
+    var isCapturingPublisher: AnyPublisher<Bool, Never> {
+        $isCapturing.eraseToAnyPublisher()
     }
     
     func setupCamera() async throws {
@@ -40,6 +44,9 @@ class CameraService: NSObject, CameraServiceProtocol {
         if !captureSession.isRunning {
             DispatchQueue.global(qos: .userInitiated).async {
                 captureSession.startRunning()
+                DispatchQueue.main.async {
+                    self.isCapturing = true
+                }
             }
         }
     }
@@ -50,22 +57,14 @@ class CameraService: NSObject, CameraServiceProtocol {
         if captureSession.isRunning {
             DispatchQueue.global(qos: .userInitiated).async {
                 captureSession.stopRunning()
+                DispatchQueue.main.async {
+                    self.isCapturing = false
+                }
             }
         }
     }
     
-    func configurePreviewLayer(for view: NSView) {
-        guard let captureSession = captureSession else { return }
-        
-        let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.frame = view.bounds
-        previewLayer.videoGravity = .resizeAspectFill
-        view.layer = previewLayer
-        view.wantsLayer = true
-        self.previewLayer = previewLayer
-    }
-    
-    func updatePreviewFrame(_ bounds: CGRect) {
-        previewLayer?.frame = bounds
+    func updatePreviewFrame(_ frame: CGRect) {
+        previewLayer?.frame = frame
     }
 }

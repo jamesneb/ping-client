@@ -18,9 +18,12 @@ enum MediaState {
 
 protocol CameraServiceProtocol {
     var state: AnyPublisher<MediaState, Never> { get }
+    var isCapturingPublisher: AnyPublisher<Bool, Never> { get }
+    var captureSession: AVCaptureSession? { get }
     func setupCamera() async throws
     func startCapture()
     func stopCapture()
+    func updatePreviewFrame(_ frame: CGRect)
 }
 
 protocol AudioServiceProtocol {

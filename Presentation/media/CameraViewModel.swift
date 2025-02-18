@@ -1,10 +1,3 @@
-//
-//  CameraViewModel.swift
-//  Ping
-//
-//  Created by James Nebeker on 2/17/25.
-//
-
 import Foundation
 import SwiftUI
 import Combine
@@ -16,31 +9,61 @@ class CameraViewModel: ObservableObject {
     
     private let cameraService: CameraServiceProtocol
     private var cancellables: Set<AnyCancellable> = []
-    var captureSession: AVCaptureSession?
-    var previewLayer = AVCaptureVideoPreviewLayer()
     
-    init(cameraService: CameraServiceProtocol = CameraServiceProtocol())
-    {
+    init(cameraService: CameraServiceProtocol = CameraService()) {
         self.cameraService = cameraService
         setupSubscriptions()
     }
     
     func setupSubscriptions() {
-        cameraService.state.receive(on: DispatchQueue.main).sink { [weak self] state in
-            switch state {
-            case .active:
-                self?.isCapturing = true
-                self?.error = nil
-            case .inactive:
-                self?.isCapturing = false
-                self?.error = nil
-            case .error(let error):
-                self?.isCapturing = false
-                self?.error = error.localizedDescription
+        cameraService.state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                switch state {
+                case .active:
+                    self?.error = nil
+                case .inactive:
+                    self?.error = nil
+                case .error(let error):
+                    self?.error = error.localizedDescription
+                }
             }
-        }
-        .store(in: &cancellables)
+            .store(in: &cancellables)
+        
+        cameraService.isCapturingPublisher
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.isCapturing, on: self)
+            .store(in: &cancellables)
     }
     
+    func setupCamera(completion: @escaping (Result<AVCaptureSession, Error>) -> Void) {
+        Task {
+            do {
+                try await cameraService.setupCamera()
+                if let captureSession = cameraService.captureSession {
+                    completion(.success(captureSession))
+                } else {
+                    completion(.failure(CameraError.captureSessionNotFound))
+                }
+            } catch {
+                completion(.failure(error))
+            }
+        }
+    }
     
+    func startCapture() {
+        cameraService.startCapture()
+    }
+    
+    func stopCapture() {
+        cameraService.stopCapture()
+    }
+    
+    func updatePreviewFrame(_ frame: CGRect) {
+        cameraService.updatePreviewFrame(frame)
+    }
+}
+
+enum CameraError: Error {
+    case captureSessionNotFound
 }

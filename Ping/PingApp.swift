@@ -8,6 +8,7 @@ struct PingApp: App {
     @StateObject private var urlHandler = URLHandler()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var audioViewModel = AudioMeterViewModel()
+    @StateObject private var cameraViewModel = CameraViewModel()
     var body: some Scene {
         WindowGroup {
             Group {
@@ -22,11 +23,12 @@ struct PingApp: App {
                     ContentView()
                         .frame(minWidth: 800, minHeight: 800)
                         .environmentObject(audioViewModel)
-                        
+                        .environmentObject(cameraViewModel)
                 case .meeting:
                     MeetingRoomView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .environmentObject(audioViewModel)
+                        .environmentObject(cameraViewModel)
                         .onAppear {
                             if let window = NSApplication.shared.windows.first {
                                 window.toggleFullScreen(nil)

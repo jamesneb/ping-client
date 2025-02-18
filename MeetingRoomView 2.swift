@@ -7,6 +7,7 @@ struct MeetingRoomView: View {
     @EnvironmentObject private var audioViewModel: AudioMeterViewModel
     @State private var noiseImage: NSImage?
     @EnvironmentObject private var urlHandler: URLHandler
+    @StateObject private var cameraViewModel = CameraViewModel()
     @State private var participants: [Participant] = [
         Participant(id: "1", nickname: "Alice", isOnline: true, isMuted: false, isVideoEnabled: true),
         Participant(id: "2", nickname: "Bob", isOnline: true, isMuted: true, isVideoEnabled: true),
@@ -41,6 +42,7 @@ struct MeetingRoomView: View {
                         .frame(maxHeight: 100)
                     
                     CameraView()
+                        .environmentObject(cameraViewModel)
                         .frame(
                             minWidth: 400,
                             idealWidth: 800,
@@ -85,6 +87,7 @@ struct MeetingRoomView: View {
                         .frame(minHeight: 50, maxHeight: 200)
                     
                     CommandBar()
+                        .environmentObject(cameraViewModel)
                         .padding(.bottom, 32)
                         .padding(.horizontal, 32)
                 }
@@ -93,15 +96,6 @@ struct MeetingRoomView: View {
         }
         .onAppear {
             setupInitialState()
-        }.onDisappear {
-            // Clean up any existing camera sessions
-            if let window = NSApplication.shared.windows.first {
-                for view in window.contentView?.subviews ?? [] {
-                    if let cameraView = view as? NSView, cameraView.layer is AVCaptureVideoPreviewLayer {
-                        (cameraView.layer as? AVCaptureVideoPreviewLayer)?.session?.stopRunning()
-                    }
-                }
-            }
         }
     }
     
@@ -111,13 +105,9 @@ struct MeetingRoomView: View {
         viewModel.connect()
         viewModel.sendMessage("GET PARTICIPANTS")
         audioViewModel.startMonitoring()
+        cameraViewModel.startCapture()
     }
 }
-
-
-
-
-
 
 struct ParticipantSidebar: View {
     let participants: [Participant]
@@ -213,8 +203,8 @@ struct ParticipantBadgeWithMenu: View {
 }
 
 struct CommandBar: View {
-    @State private var isVideoEnabled = true
     @EnvironmentObject private var audioViewModel: AudioMeterViewModel
+    @EnvironmentObject private var cameraViewModel: CameraViewModel
     
     var body: some View {
         HStack(spacing: 20) {
@@ -222,24 +212,19 @@ struct CommandBar: View {
                           color: Color(hex: "34495E")) {
                 print("toggling audio")
                 if audioViewModel.isMonitoring {
-                    
                     audioViewModel.stopMonitoring()
                 } else {
                     audioViewModel.startMonitoring()
                 }
             }
             
-            CommandButton(icon: isVideoEnabled ? "video.fill" : "video.slash.fill",
+            CommandButton(icon: cameraViewModel.isCapturing ? "video.fill" : "video.slash.fill",
                           color: Color(hex: "34495E")) {
-                if let window = NSApplication.shared.windows.first {
-                    for view in window.contentView?.subviews ?? [] {
-                        if let cameraView = view as? NSView, cameraView.layer is AVCaptureVideoPreviewLayer {
-                            (cameraView.layer as? AVCaptureVideoPreviewLayer)?.session?.stopRunning()
-                        }
-                    }
+                if cameraViewModel.isCapturing {
+                    cameraViewModel.stopCapture()
+                } else {
+                    cameraViewModel.startCapture()
                 }
-                isVideoEnabled.toggle()
-               
             }
             
             CommandButton(icon: "hand.raised.fill", color: Color(hex: "34495E")) {
@@ -295,6 +280,7 @@ struct CommandButton: View {
         .buttonStyle(CommandButtonStyle())
     }
 }
+
 struct CommandButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -400,4 +386,6 @@ extension Color {
 #Preview {
     MeetingRoomView()
         .environmentObject(URLHandler())
+        .environmentObject(AudioMeterViewModel())
+        .environmentObject(CameraViewModel())
 }
