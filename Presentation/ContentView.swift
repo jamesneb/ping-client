@@ -6,7 +6,7 @@ struct ContentView: View {
     @State private var nickname: String = UserData().nickname
     @State private var passcode: String = ""
     @State private var noiseImage: NSImage?
-    
+    @EnvironmentObject private var audioViewModel: AudioMeterViewModel
     // URLHandler for navigation
     @EnvironmentObject private var urlHandler: URLHandler
     

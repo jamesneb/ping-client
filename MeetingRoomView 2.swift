@@ -4,6 +4,7 @@ import Foundation
 
 struct MeetingRoomView: View {
     @StateObject private var viewModel = WebSocketViewModel()
+    @EnvironmentObject private var audioViewModel: AudioMeterViewModel
     @State private var noiseImage: NSImage?
     @EnvironmentObject private var urlHandler: URLHandler
     @State private var participants: [Participant] = [
@@ -109,6 +110,7 @@ struct MeetingRoomView: View {
         participants = participants.sorted(by: { $0.nickname < $1.nickname })
         viewModel.connect()
         viewModel.sendMessage("GET PARTICIPANTS")
+        audioViewModel.startMonitoring()
     }
 }
 
@@ -211,25 +213,39 @@ struct ParticipantBadgeWithMenu: View {
 }
 
 struct CommandBar: View {
-    @State private var isMuted = false
     @State private var isVideoEnabled = true
+    @EnvironmentObject private var audioViewModel: AudioMeterViewModel
     
     var body: some View {
         HStack(spacing: 20) {
-            CommandButton(icon: isMuted ? "mic.slash.fill" : "mic.fill",
+            CommandButton(icon: !audioViewModel.isMonitoring ? "mic.slash.fill" : "mic.fill",
                           color: Color(hex: "34495E")) {
-                isMuted.toggle()
+                print("toggling audio")
+                if audioViewModel.isMonitoring {
+                    
+                    audioViewModel.stopMonitoring()
+                } else {
+                    audioViewModel.startMonitoring()
+                }
             }
             
             CommandButton(icon: isVideoEnabled ? "video.fill" : "video.slash.fill",
                           color: Color(hex: "34495E")) {
+                if let window = NSApplication.shared.windows.first {
+                    for view in window.contentView?.subviews ?? [] {
+                        if let cameraView = view as? NSView, cameraView.layer is AVCaptureVideoPreviewLayer {
+                            (cameraView.layer as? AVCaptureVideoPreviewLayer)?.session?.stopRunning()
+                        }
+                    }
+                }
                 isVideoEnabled.toggle()
+               
             }
             
-            CommandButton(icon: "hand.raise.fill", color: Color(hex: "34495E")) {
+            CommandButton(icon: "hand.raised.fill", color: Color(hex: "34495E")) {
             }
             
-            CommandButton(icon: "rectangle.3.group.fill", color: Color(hex: "34495E")) {
+            CommandButton(icon: "rectangle.on.rectangle.angled", color: Color(hex: "34495E")) {
             }
             
             CommandButton(icon: "arrow.up.left.and.arrow.down.right", color: Color(hex: "34495E")) {

@@ -7,7 +7,7 @@ import SwiftUI
 struct PingApp: App {
     @StateObject private var urlHandler = URLHandler()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+    @StateObject private var audioViewModel = AudioMeterViewModel()
     var body: some Scene {
         WindowGroup {
             Group {
@@ -21,9 +21,12 @@ struct PingApp: App {
                 case .lobby:
                     ContentView()
                         .frame(minWidth: 800, minHeight: 800)
+                        .environmentObject(audioViewModel)
+                        
                 case .meeting:
                     MeetingRoomView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .environmentObject(audioViewModel)
                         .onAppear {
                             if let window = NSApplication.shared.windows.first {
                                 window.toggleFullScreen(nil)
