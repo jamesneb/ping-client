@@ -16,5 +16,11 @@
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need access to your microphone for audio monitoring</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Ping needs access to your screen for sharing.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Ping requires screen recording permission to share your screen.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need camera access for video calls.</string>
 </dict>
 </plist>

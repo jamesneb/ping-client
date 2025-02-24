@@ -24,6 +24,7 @@ struct PingApp: App {
                         .frame(minWidth: 800, minHeight: 800)
                         .environmentObject(audioViewModel)
                         .environmentObject(cameraViewModel)
+                        
                 case .meeting:
                     MeetingRoomView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

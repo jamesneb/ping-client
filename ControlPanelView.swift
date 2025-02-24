@@ -4,7 +4,7 @@ import SwiftUI
 public struct ControlPanelView: View {
     @State private var selectedItem: String? = nil
     @State private var noiseImage: NSImage?
-    
+    @EnvironmentObject private var urlHandler: URLHandler
     // This function generates gradients dynamically based on the item type and selection state
     private func getGradient(for type: String, isSelected: Bool) -> Gradient {
         switch type {
@@ -102,7 +102,10 @@ public struct ControlPanelView: View {
                 if let selectedItem = selectedItem {
                     switch selectedItem {
                     case "newMeeting":
-                        ContentView()
+                        Text("")
+                                    .onAppear {
+                                        urlHandler.currentRoute = .lobby
+                                    }
                     case "archive":
                         Text("Archive View")
                             .font(.system(size: 24, weight: .bold))

@@ -60,3 +60,5 @@ public class UserData: ObservableObject {
         self.nickname = UserDefaults.standard.string(forKey: "userNickname") ?? ""
     }
 }
+
+

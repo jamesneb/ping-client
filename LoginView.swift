@@ -87,6 +87,46 @@ class SoundManager {
             print("Could not play sound: \(error)")
         }
     }
+    func playCancelSound() {
+        guard let soundUrl = Bundle.main.url(forResource: "cancel", withExtension: "wav") else {
+            print("Sound file not found")
+            return
+        }
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: soundUrl)
+            audioPlayer?.play()
+        } catch {
+            print("Could not play sound: \(error)")
+        }
+    }
+    
+    func playHandRaisedSound() {
+        guard let soundUrl = Bundle.main.url(forResource: "chime", withExtension: "wav") else {
+            print("Sound file not found")
+            return
+        }
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: soundUrl)
+            audioPlayer?.play()
+            
+        } catch {
+            print ("Could not play sound: \(error)")
+        }
+    }
+    
+    func playScreenSharedSound() {
+        guard let soundUrl = Bundle.main.url(forResource: "screensharechime", withExtension: "wav") else {
+            print("Sound file not found")
+            return
+        }
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: soundUrl)
+            audioPlayer?.play()
+            
+        } catch {
+            print ("Could not play sound: \(error)")
+        }
+    }
 }
 
 
