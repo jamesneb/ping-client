@@ -94,6 +94,8 @@ struct SelectionView: View {
     @State private var previewViewModels: [UInt32: DisplayPreviewViewModel] = [:]
 
     var body: some View {
+        let vm = viewModel // Local capture for closure safety
+        
         ZStack {
             LinearGradient(
                 gradient: Gradient(colors: [
@@ -115,10 +117,9 @@ struct SelectionView: View {
                 Divider()
                     .background(Color.white.opacity(0.2))
 
-                if let content = viewModel.availableContent {
+                if let content = vm.availableContent {
                     ScrollView {
                         VStack(spacing: 20) {
-                            // Displays Section
                             Text("Displays")
                                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
@@ -139,7 +140,6 @@ struct SelectionView: View {
                                 }
                             }
 
-                            // Windows Section
                             Text("Windows")
                                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
@@ -160,7 +160,6 @@ struct SelectionView: View {
                                 }
                             }
 
-                            // Network Services Section
                             Text("Network Services")
                                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
@@ -192,13 +191,12 @@ struct SelectionView: View {
                 Button(action: {
                     previewViewModels.values.forEach { $0.stopStream() }
                     if let service = selectedService {
-                        // Handle network service selection (e.g., connect to it)
                         print("Selected network service: \(service.endpoint)")
-                        // You might want to extend ScreenCaptureViewModel to handle network streams
+                        // Handle network service selection if needed
                     } else {
-                        viewModel.startCaptureWithSelection(display: selectedDisplay, window: selectedWindow)
+                        vm.startCaptureWithSelection(display: selectedDisplay, window: selectedWindow) // Use local vm
                     }
-                    viewModel.isShowingSelection = false
+                    vm.isShowingSelection = false
                 }) {
                     Text("Start Capture")
                         .font(.system(size: 16, weight: .medium, design: .rounded))
@@ -241,7 +239,7 @@ struct SelectionView: View {
                 )
         )
         .onAppear {
-            if let content = viewModel.availableContent {
+            if let content = vm.availableContent {
                 for display in content.displays {
                     let previewVM = DisplayPreviewViewModel(display: display)
                     previewViewModels[display.displayID] = previewVM

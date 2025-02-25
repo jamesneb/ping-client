@@ -1,5 +1,3 @@
-
-
 import Foundation
 import AppKit
 import SwiftUI
@@ -7,12 +5,13 @@ import Combine
 import AVFoundation
 
 struct MeetingRoomView: View {
-    @StateObject private var screenCaptureModel = ScreenCaptureViewModel()
-    @StateObject private var viewModel = WebSocketViewModel()
-    @EnvironmentObject private var audioViewModel: AudioMeterViewModel
+    @StateObject private var screenCaptureModel = ScreenCaptureViewModel() // Assuming this exists elsewhere
+    @StateObject private var recordingService = RecordingService()
+    @StateObject private var viewModel = WebSocketViewModel() // Assuming this exists
+    @EnvironmentObject private var audioViewModel: AudioMeterViewModel // Assuming this exists
     @State private var noiseImage: NSImage?
-    @EnvironmentObject private var urlHandler: URLHandler
-    @StateObject private var cameraViewModel = CameraViewModel()
+    @EnvironmentObject private var urlHandler: URLHandler // Assuming this exists
+    @StateObject private var cameraViewModel = CameraViewModel() // Assuming this exists
     @State private var wantsScreenShare: Bool = false
 
     var body: some View {
@@ -39,25 +38,19 @@ struct MeetingRoomView: View {
                         VStack(spacing: 0) {
                             Spacer().frame(height: max(0, geometry.size.height * 0.1))
 
-                            // Updated layout with RecordButton to the side
                             HStack(spacing: 20) {
                                 if !wantsScreenShare {
                                     cameraSection(geometry: geometry)
                                 } else {
                                     ScreenShareView(screenCaptureViewModel: screenCaptureModel)
                                         .environmentObject(cameraViewModel)
-                                        .frame(
-                                            width: min(geometry.size.width * 0.8, 1200),
-                                            height: min(geometry.size.height * 0.5, 600)
-                                        )
-                                    
+                                        .frame(width: min(geometry.size.width * 0.8, 1200), height: min(geometry.size.height * 0.5, 600))
                                 }
                                 
                                 ButtonPane(wantsScreenShare: $wantsScreenShare)
-                                        .environmentObject(cameraViewModel)
-                                        .environmentObject(screenCaptureModel)
-                            
-                               
+                                    .environmentObject(cameraViewModel)
+                                    .environmentObject(screenCaptureModel)
+                                    .environmentObject(recordingService)
                             }
                             .frame(maxWidth: min(geometry.size.width * 0.8, 1200))
 
@@ -82,10 +75,11 @@ struct MeetingRoomView: View {
         }
         .onAppear {
             setupInitialState()
-            configureWindowForMeetingRoom()  // ✅ Window Resize Logic
+            configureWindowForMeetingRoom()
         }
         .onDisappear {
-            restoreWindowResizability()  // ✅ Restore Resize on Exit
+            restoreWindowResizability()
+            recordingService.stopCapture()
         }
     }
 
@@ -122,7 +116,6 @@ struct MeetingRoomView: View {
                 cameraViewModel.startCapture()
             }
             .onDisappear {
-                // Only stop if explicitly toggled off, not on view switch
                 if !cameraViewModel.isCapturing {
                     print("CameraView disappeared, capture already stopped")
                 }
@@ -131,10 +124,8 @@ struct MeetingRoomView: View {
 
     private func configureWindowForMeetingRoom() {
         guard let window = NSApplication.shared.windows.first else { return }
-
         if let screen = NSScreen.main {
             let visibleFrame = screen.visibleFrame
-
             window.setFrame(visibleFrame, display: true, animate: true)
             window.styleMask.remove(.resizable)
             window.styleMask.insert(.resizable)
@@ -151,7 +142,7 @@ struct MeetingRoomView: View {
     }
 
     private func setupInitialState() {
-        noiseImage = loadNoiseImage(from: "background")
+        noiseImage = loadNoiseImage(from: "background") // Assuming this function exists
         viewModel.connect()
         viewModel.sendMessage("GET PARTICIPANTS")
         audioViewModel.startMonitoring()
@@ -159,8 +150,206 @@ struct MeetingRoomView: View {
     }
 }
 
-// Rest of the code remains unchanged...
+struct ButtonPane: View {
+    @Binding var wantsScreenShare: Bool
+    @EnvironmentObject private var cameraViewModel: CameraViewModel
+    @EnvironmentObject private var screenCaptureModel: ScreenCaptureViewModel
+    @EnvironmentObject private var recordingService: RecordingService
 
+    var body: some View {
+        VStack(spacing: 15) {
+            // Record Button
+            RecordButton(isRecording: $recordingService.isRecording)
+                .frame(width: 50, height: 50)
+            
+            // Camera Toggle Button
+            CommandButton(
+                icon: cameraViewModel.isCapturing ? "video.fill" : "video.slash.fill",
+                color: Color(hex: "34495E")
+            ) {
+                if cameraViewModel.isCapturing {
+                    cameraViewModel.stopCapture()
+                } else {
+                    cameraViewModel.startCapture()
+                }
+            }
+            .frame(width: 40, height: 40)
+            
+            // Screen Sharing Toggle Button
+            CommandButton(
+                icon: wantsScreenShare ? "rectangle.on.rectangle.angled.fill" : "rectangle.on.rectangle.angled",
+                color: Color(hex: "34495E")
+            ) {
+                wantsScreenShare.toggle()
+                if wantsScreenShare {
+                    screenCaptureModel.startScreenCapture()
+                    SoundManager.shared.playScreenSharedSound() // Assuming this exists
+                } else {
+                    screenCaptureModel.stopScreenCapture()
+                    SoundManager.shared.playCancelSound()
+                }
+            }
+            .frame(width: 40, height: 40)
+        }
+        .padding(.vertical, 20)
+        .padding(.horizontal, 10)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(hex: "2C3E50").opacity(0.9),
+                                Color(hex: "1E293B")
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(hex: "8B5CF6").opacity(0.5),
+                                Color(hex: "EC4899").opacity(0.3)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.5
+                    )
+                    .blur(radius: 4)
+            }
+        )
+        .shadow(color: Color(hex: "8B5CF6").opacity(0.25), radius: 8, x: 0, y: 4)
+        .animation(.easeInOut(duration: 0.3), value: wantsScreenShare)
+        .frame(width: 70)
+    }
+}
+
+struct RecordButton: View {
+    @Binding var isRecording: Bool
+    @EnvironmentObject private var recordingService: RecordingService
+    @State private var isHovered = false
+    @State private var pulseScale: CGFloat = 1.0
+    
+    var body: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                if isRecording {
+                    recordingService.stopCapture()
+                } else {
+                    recordingService.startCapture()
+                }
+            }
+        }) {
+            ZStack {
+                // Pulse effect when recording
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            gradient: Gradient(colors: [
+                                Color(hex: "EC4899").opacity(0.3),
+                                Color(hex: "8B5CF6").opacity(0.1),
+                                .clear
+                            ]),
+                            center: .center,
+                            startRadius: 5,
+                            endRadius: 60
+                        )
+                    )
+                    .scaleEffect(isRecording ? pulseScale : 0)
+                    .opacity(isRecording ? 0.8 : 0)
+                
+                // Main button background
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(hex: "3B0764"),
+                                Color(hex: "1E293B")
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 60, height: 60)
+                
+                // Glowing border
+                Circle()
+                    .strokeBorder(
+                        AngularGradient(
+                            gradient: Gradient(colors: [
+                                Color(hex: "8B5CF6"),
+                                Color(hex: "EC4899"),
+                                Color(hex: "8B5CF6"),
+                            ]),
+                            center: .center,
+                            angle: .degrees(isRecording ? 360 : 0)
+                        ),
+                        lineWidth: 3
+                    )
+                    .frame(width: 64, height: 64)
+                    .shadow(color: Color(hex: "8B5CF6").opacity(0.5), radius: 8, x: 0, y: 0)
+                
+                // Center icon
+                ZStack {
+                    if isRecording {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.red)
+                            .frame(width: 24, height: 24)
+                            .shadow(color: Color.red.opacity(0.6), radius: 4, x: 0, y: 0)
+                    } else {
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    gradient: Gradient(colors: [
+                                        Color(hex: "F9FAFB"),
+                                        Color(hex: "D1D5DB")
+                                    ]),
+                                    center: .center,
+                                    startRadius: 5,
+                                    endRadius: 20
+                                )
+                            )
+                            .frame(width: 28, height: 28)
+                    }
+                }
+                
+                // Hover overlay
+                Circle()
+                    .fill(Color.white.opacity(isHovered ? 0.1 : 0))
+                    .frame(width: 60, height: 60)
+            }
+        }
+        .buttonStyle(RecordButtonStyle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovered = hovering
+            }
+        }
+        .onChange(of: isRecording) { newValue in
+            if newValue {
+                startPulseAnimation()
+            }
+        }
+    }
+    
+    private func startPulseAnimation() {
+        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+            pulseScale = 1.4
+        }
+    }
+}
+
+struct RecordButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
+            .brightness(configuration.isPressed ? -0.05 : 0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
 struct ParticipantSidebar: View {
     let participants: [Participant]
 
@@ -217,7 +406,6 @@ struct ParticipantSidebar: View {
     }
 }
 
-// New NSScrollbar implementation
 struct NSScrollbarOverlay: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
@@ -238,30 +426,26 @@ struct NSScrollbarOverlay: NSViewRepresentable {
     
     func updateNSView(_ nsView: NSView, context: Context) {}
 }
-struct CustomScrollbar: NSViewRepresentable {
-   func makeNSView(context: Context) -> NSView {
-       let view = NSView()
-       
-       DispatchQueue.main.async {
-           if let scrollView = view.enclosingScrollView {
-               scrollView.hasVerticalScroller = true
-               
-               if let scroller = scrollView.verticalScroller {
-                   scroller.alphaValue = 0.8
-                   scroller.layer?.backgroundColor = NSColor(Color(hex: "4338CA").opacity(0.3)).cgColor
-               }
-               
-               scrollView.drawsBackground = false
-               scrollView.backgroundColor = .clear
-           }
-       }
-       
-       return view
-   }
-   
-   func updateNSView(_ nsView: NSView, context: Context) {}
-}
 
+struct CustomScrollbar: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            if let scrollView = view.enclosingScrollView {
+                scrollView.hasVerticalScroller = true
+                if let scroller = scrollView.verticalScroller {
+                    scroller.alphaValue = 0.8
+                    scroller.layer?.backgroundColor = NSColor(Color(hex: "4338CA").opacity(0.3)).cgColor
+                }
+                scrollView.drawsBackground = false
+                scrollView.backgroundColor = .clear
+            }
+        }
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
 
 struct ParticipantBadgeWithMenu: View {
     let participant: Participant
@@ -280,9 +464,7 @@ struct ParticipantBadgeWithMenu: View {
                 )
             
             VStack(spacing: 0) {
-                Button(action: {
-                    // Handle click if needed
-                }) {
+                Button(action: {}) {
                     UserAvatarBadge(
                         initial: String(participant.nickname.prefix(1)),
                         isOnline: participant.isOnline,
@@ -296,9 +478,9 @@ struct ParticipantBadgeWithMenu: View {
                     .padding(.bottom, 4)
             }
         }
-       
     }
 }
+
 struct CommandBar: View {
     @EnvironmentObject private var audioViewModel: AudioMeterViewModel
     @EnvironmentObject private var cameraViewModel: CameraViewModel
@@ -306,14 +488,12 @@ struct CommandBar: View {
     @State private var handRaised: Bool = false
     @Binding var wantsScreenShare: Bool
     
-    // Drag-related state
     @State private var offset = CGSize.zero
     @State private var isDragging = false
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Command Buttons Container - Centered horizontally
                 HStack(spacing: 20) {
                     CommandButton(icon: !audioViewModel.isMonitoring ? "mic.slash.fill" : "mic.fill",
                                   color: Color(hex: "34495E")) {
@@ -333,14 +513,14 @@ struct CommandBar: View {
                         }
                     }
 
-                    CommandButton(icon: handRaised ? "hand.point.up.fill" : "hand.raised.fill", // Toggle icon
+                    CommandButton(icon: handRaised ? "hand.point.up.fill" : "hand.raised.fill",
                                   color: Color(hex: "34495E")) {
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.5, blendDuration: 0.3)) {
                             handRaised.toggle()
                             if handRaised {
                                 SoundManager.shared.playHandRaisedSound()
                             } else {
-                                SoundManager.shared.playCancelSound() // Play cancel sound when hand is lowered
+                                SoundManager.shared.playCancelSound()
                             }
                         }
                     }
@@ -350,7 +530,7 @@ struct CommandBar: View {
                         if wantsScreenShare {
                             SoundManager.shared.playScreenSharedSound()
                         } else {
-                            SoundManager.shared.playCancelSound() // Play cancel sound when screen share is stopped
+                            SoundManager.shared.playCancelSound()
                         }
                     }
 
@@ -366,8 +546,8 @@ struct CommandBar: View {
                                 .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
                         )
                 )
-                .frame(maxWidth: .infinity) // Allow it to stretch but center content
-                .position(x: geometry.size.width / 2, y: geometry.size.height / 2) // Center within GeometryReader
+                .frame(maxWidth: .infinity)
+                .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
                 .gesture(
                     DragGesture(minimumDistance: 10)
                         .onChanged { gesture in
@@ -392,18 +572,17 @@ struct CommandBar: View {
                     }
                 )
 
-                // Hand Raised Badge - Positioned relative to dragged offset
                 HandWaiveBadge()
                     .opacity(handRaised ? 1.0 : 0.0)
                     .scaleEffect(handRaised ? 1.2 : 0.5)
-                    .offset(x: offset.width, y: offset.height - 100) // Follows CommandBar, offset upward
+                    .offset(x: offset.width, y: offset.height - 100)
                     .animation(.spring(response: 0.6, dampingFraction: 0.4, blendDuration: 0.3), value: handRaised)
                     .onChange(of: handRaised) { newValue in
                         if newValue {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
                                 withAnimation {
                                     handRaised = false
-                                    SoundManager.shared.playCancelSound() // Play cancel sound when auto-lowered
+                                    SoundManager.shared.playCancelSound()
                                 }
                             }
                         }
@@ -412,6 +591,7 @@ struct CommandBar: View {
         }
     }
 }
+
 struct UserAvatarBadge: View {
     let initial: String
     let isOnline: Bool
@@ -420,7 +600,6 @@ struct UserAvatarBadge: View {
 
     var body: some View {
         ZStack(alignment: .center) {
-            // Avatar Badge
             Circle()
                 .fill(
                     LinearGradient(
@@ -493,14 +672,13 @@ struct UserAvatarBadge: View {
                     .offset(x: size * 0.35, y: size * 0.35)
             }
 
-            // Context Menu (only shown when hovered)
             if isHovered {
                 contextMenuOverlay()
-                    .offset(x: size / 2 + 10, y: 0) // Position to the right
+                    .offset(x: size / 2 + 10, y: 0)
             }
         }
-        .frame(width: size + (isHovered ? 150 : 0), height: size) // Expand frame when menu is visible
-        .contentShape(Rectangle()) // Ensure the entire area is hoverable
+        .frame(width: size + (isHovered ? 150 : 0), height: size)
+        .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isHovered = hovering
@@ -513,7 +691,7 @@ struct UserAvatarBadge: View {
         VStack(spacing: 8) {
             Button("Mute") {
                 print("Mute clicked for \(initial)")
-                isHovered = false // Optionally hide menu after click
+                isHovered = false
             }
             Button("Kick") {
                 print("Kick clicked for \(initial)")
@@ -529,220 +707,63 @@ struct UserAvatarBadge: View {
         .cornerRadius(8)
         .shadow(radius: 5)
         .foregroundColor(.white)
-        .buttonStyle(PlainButtonStyle()) // Ensure buttons don’t interfere with hover
+        .buttonStyle(PlainButtonStyle())
     }
 }
+
 struct HandWaiveBadge: View {
-   var body: some View {
-       Text("✋ Hand Raised")
-           .font(.headline)
-           .padding(12)
-           .background(Color.red.opacity(0.9))
-           .foregroundColor(.white)
-           .cornerRadius(12)
-           .shadow(radius: 5)
-   }
+    var body: some View {
+        Text("✋ Hand Raised")
+            .font(.headline)
+            .padding(12)
+            .background(Color.red.opacity(0.9))
+            .foregroundColor(.white)
+            .cornerRadius(12)
+            .shadow(radius: 5)
+    }
 }
 
 struct CommandButton: View {
-   let icon: String
-   let color: Color
-   let action: () -> Void
-   
-   var body: some View {
-       Button(action: action) {
-           ZStack {
-               Image(systemName: icon)
-                   .font(.system(size: 20))
-                   .foregroundColor(.white.opacity(0.7))
-                   .offset(x: 0.5, y: 0.5)
-               
-               Image(systemName: icon)
-                   .font(.system(size: 20))
-                   .foregroundColor(.white)
-           }
-           .frame(width: 44, height: 44)
-           .background(
-               Circle()
-                   .fill(color)
-                   .overlay(
-                       Circle()
-                           .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
-                   )
-                   .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
-           )
-       }
-       .buttonStyle(CommandButtonStyle())
-   }
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(.white.opacity(0.7))
+                    .offset(x: 0.5, y: 0.5)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+            }
+            .frame(width: 44, height: 44)
+            .background(
+                Circle()
+                    .fill(color)
+                    .overlay(
+                        Circle()
+                            .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+            )
+        }
+        .buttonStyle(CommandButtonStyle())
+    }
 }
 
 struct CommandButtonStyle: ButtonStyle {
-   func makeBody(configuration: Configuration) -> some View {
-       configuration.label
-           .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-           .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
-   }
-}
-
-struct ButtonPane: View {
-    @Binding var wantsScreenShare: Bool // To interact with MeetingRoomView state
-    @EnvironmentObject private var cameraViewModel: CameraViewModel
-    @EnvironmentObject private var screenCaptureModel: ScreenCaptureViewModel
-
-    var body: some View {
-        VStack(spacing: 15) {
-            // Record Button
-            RecordButton()
-                .frame(width: 50, height: 50) // Keep button size consistent
-            
-            // Toggle Camera Button
-            CommandButton(
-                icon: cameraViewModel.isCapturing ? "video.fill" : "video.slash.fill",
-                color: Color(hex: "34495E")
-            ) {
-                if cameraViewModel.isCapturing {
-                    cameraViewModel.stopCapture()
-                } else {
-                    cameraViewModel.startCapture()
-                }
-            }
-            .frame(width: 40, height: 40)
-            
-            // Toggle Screen Share Button
-            CommandButton(
-                icon: wantsScreenShare ? "rectangle.on.rectangle.angled.fill" : "rectangle.on.rectangle.angled",
-                color: Color(hex: "34495E")
-            ) {
-                wantsScreenShare.toggle()
-                if wantsScreenShare {
-                    SoundManager.shared.playScreenSharedSound()
-                } else {
-                    SoundManager.shared.playCancelSound()
-                }
-            }
-            .frame(width: 40, height: 40)
-        }
-        .padding(.vertical, 20)
-        .padding(.horizontal, 10)
-        .background(
-            ZStack {
-                // Gradient background with vibrant accent
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(hex: "2C3E50").opacity(0.9), // Darker base
-                                Color(hex: "1E293B")              // Matches MeetingRoomView
-                            ]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                
-                // Subtle vibrant edge glow
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(hex: "8B5CF6").opacity(0.5),
-                                Color(hex: "EC4899").opacity(0.3)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.5
-                    )
-                    .blur(radius: 4)
-            }
-        )
-        .shadow(color: Color(hex: "8B5CF6").opacity(0.25), radius: 8, x: 0, y: 4)
-        .animation(.easeInOut(duration: 0.3), value: wantsScreenShare) // Smooth transitions
-        .frame(width: 70) // Fixed width for the pane
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 
-struct RecordButton: View {
-    @State private var isPressed = false
-    @State private var isHovered = false
 
-    var body: some View {
-        ZStack {
-            // Outer glow ring (pulsing effect)
-            Circle()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Color(hex: "8B5CF6").opacity(0.5),
-                            Color(hex: "EC4899").opacity(0.1),
-                            Color.clear
-                        ]),
-                        center: .center,
-                        startRadius: 5,
-                        endRadius: 40
-                    )
-                )
-                .frame(width: 80, height: 80)
-                .scaleEffect(isHovered ? 1.1 : 1.0)
-                .opacity(isPressed ? 0.7 : 1.0)
-                .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: isHovered)
-
-            // Main button
-            Circle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(hex: "F9FAFB"), // Near-white
-                            Color(hex: "D1D5DB")  // Light gray
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 50, height: 50)
-                .overlay(
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color(hex: "8B5CF6"),
-                                    Color(hex: "EC4899")
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 4
-                        )
-                        .shadow(color: Color(hex: "8B5CF6").opacity(0.6), radius: 6, x: 0, y: 0)
-                )
-                .overlay(
-                    // Record icon (red dot)
-                    Circle()
-                        .fill(Color.red)
-                        .frame(width: 20, height: 20)
-                        .shadow(color: Color.red.opacity(0.5), radius: 4, x: 0, y: 0)
-                )
-                .scaleEffect(isPressed ? 0.9 : 1.0)
-                .brightness(isPressed ? -0.1 : 0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
-        }
-        .onHover { hovering in
-            withAnimation {
-                isHovered = hovering
-            }
-        }
-        .gesture(
-            TapGesture()
-                .onEnded { _ in
-                    withAnimation {
-                        isPressed = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isPressed = false // Reset after press
-                        }
-                    }
-                }
-        )
-    }
-}
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -755,11 +776,9 @@ extension Color {
     }
 }
 
-
 #Preview {
     MeetingRoomView()
         .environmentObject(URLHandler())
         .environmentObject(AudioMeterViewModel())
         .environmentObject(CameraViewModel())
 }
-
