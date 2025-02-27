@@ -52,7 +52,7 @@ struct CameraView: NSViewRepresentable {
             previewLayer.cornerRadius = 12 // Subtle rounding
             previewLayer.masksToBounds = true
             // Apply a vibrant border
-            previewLayer.borderColor = NSColor(Color(hex: "8B5CF6")).cgColor
+            previewLayer.borderColor = NSColor(Color("8B5CF6")).cgColor
             previewLayer.borderWidth = 2
             view.layer = previewLayer
             view.wantsLayer = true

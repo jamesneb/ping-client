@@ -3,16 +3,19 @@ import AppKit
 import SwiftUI
 import Combine
 import AVFoundation
+import AVKit
 
 struct MeetingRoomView: View {
-    @StateObject private var screenCaptureModel = ScreenCaptureViewModel() // Assuming this exists elsewhere
+    @StateObject private var screenCaptureModel = ScreenCaptureViewModel()
     @StateObject private var recordingService = RecordingService()
-    @StateObject private var viewModel = WebSocketViewModel() // Assuming this exists
-    @EnvironmentObject private var audioViewModel: AudioMeterViewModel // Assuming this exists
+    @StateObject private var viewModel = WebSocketViewModel()
+    @EnvironmentObject private var audioViewModel: AudioMeterViewModel
     @State private var noiseImage: NSImage?
-    @EnvironmentObject private var urlHandler: URLHandler // Assuming this exists
-    @StateObject private var cameraViewModel = CameraViewModel() // Assuming this exists
+    @EnvironmentObject private var urlHandler: URLHandler
+    @StateObject private var cameraViewModel = CameraViewModel()
     @State private var wantsScreenShare: Bool = false
+    @State private var isViewingRecording: Bool = false
+    @State private var recordingPlayer = RecordingPlayer()
 
     var body: some View {
         GeometryReader { geometry in
@@ -39,7 +42,9 @@ struct MeetingRoomView: View {
                             Spacer().frame(height: max(0, geometry.size.height * 0.1))
 
                             HStack(spacing: 20) {
-                                if !wantsScreenShare {
+                                if isViewingRecording {
+                                    recordingPlayerView(geometry: geometry)
+                                } else if !wantsScreenShare {
                                     cameraSection(geometry: geometry)
                                 } else {
                                     ScreenShareView(screenCaptureViewModel: screenCaptureModel)
@@ -47,7 +52,10 @@ struct MeetingRoomView: View {
                                         .frame(width: min(geometry.size.width * 0.8, 1200), height: min(geometry.size.height * 0.5, 600))
                                 }
                                 
-                                ButtonPane(wantsScreenShare: $wantsScreenShare)
+                                ButtonPane(
+                                    wantsScreenShare: $wantsScreenShare,
+                                    isViewingRecording: $isViewingRecording
+                                )
                                     .environmentObject(cameraViewModel)
                                     .environmentObject(screenCaptureModel)
                                     .environmentObject(recordingService)
@@ -80,6 +88,42 @@ struct MeetingRoomView: View {
         .onDisappear {
             restoreWindowResizability()
             recordingService.stopCapture()
+        }
+        .onChange(of: isViewingRecording) { isViewing in
+            print("isViewingRecording changed to: \(isViewing)")
+            if isViewing {
+                // When viewing is enabled, try to load and play the last recording
+                if let recordingURL = recordingService.getLastRecordingURL() {
+                    print("Found recording URL: \(recordingURL.path)")
+                    print("File exists: \(FileManager.default.fileExists(atPath: recordingURL.path))")
+                    
+                    // Check if file is readable
+                    do {
+                        let attr = try FileManager.default.attributesOfItem(atPath: recordingURL.path)
+                        print("File size: \(attr[.size] ?? 0) bytes")
+                    } catch {
+                        print("Error checking file attributes: \(error)")
+                    }
+                    
+                    // Add a slightly longer delay to ensure the player view is fully ready
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        print("Loading URL into player...")
+                        recordingPlayer.load(url: recordingURL)
+                        
+                        // Add another small delay before playing
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            print("Playing recording...")
+                            recordingPlayer.play()
+                        }
+                    }
+                } else {
+                    print("No recording found to play")
+                }
+            } else {
+                // Pause when switching away from recording view
+                print("Pausing playback")
+                recordingPlayer.pause()
+            }
         }
     }
 
@@ -121,7 +165,82 @@ struct MeetingRoomView: View {
                 }
             }
     }
+    private func testWithKnownVideo() {
+        // URL to a test video in your app bundle
+        if let testURL = Bundle.main.url(forResource: "test_video", withExtension: "mp4") {
+            print("Testing with bundled video at: \(testURL.path)")
+            recordingPlayer.load(url: testURL)
+            recordingPlayer.play()
+        } else {
+            print("Test video not found in bundle")
+        }
+    }
+    private func recordingPlayerView(geometry: GeometryProxy) -> some View {
+        ZStack {
+            // Direct AVPlayer implementation using our renamed struct
+            AVPlayerViewWrapper(url: recordingService.getLastRecordingURL())
+                .frame(width: min(geometry.size.width * 0.8, 1200), height: min(geometry.size.height * 0.5, 600))
+            
+            // Your existing debug overlay
+            VStack {
+                if let url = recordingService.getLastRecordingURL() {
+                    Text("Loading: \(url.lastPathComponent)")
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(8)
+                } else {
+                    Text("No recording URL found")
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(8)
+                }
+            }
+        }
+        .cornerRadius(12)
+        .shadow(color: Color(hex: "8B5CF6").opacity(0.3), radius: 8, x: 0, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color(hex: "8B5CF6"), Color(hex: "EC4899")]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
+        )
+    }
 
+    // Renamed struct to avoid namespace collision with Apple's AVPlayerView
+    struct AVPlayerViewWrapper: NSViewRepresentable {
+        let url: URL?
+        private var player: AVPlayer?
+        
+        init(url: URL?) {
+            self.url = url
+            if let validURL = url {
+                self.player = AVPlayer(url: validURL)
+                // Start playing immediately
+                self.player?.play()
+            }
+        }
+        
+        func makeNSView(context: Context) -> AVKit.AVPlayerView {
+            let view = AVKit.AVPlayerView()
+            if let player = player {
+                view.player = player
+                view.controlsStyle = .inline
+                view.showsFullScreenToggleButton = true
+            }
+            return view
+        }
+        
+        func updateNSView(_ nsView: AVKit.AVPlayerView, context: Context) {
+            // Update if needed
+        }
+    }
     private func configureWindowForMeetingRoom() {
         guard let window = NSApplication.shared.windows.first else { return }
         if let screen = NSScreen.main {
@@ -142,7 +261,7 @@ struct MeetingRoomView: View {
     }
 
     private func setupInitialState() {
-        noiseImage = loadNoiseImage(from: "background") // Assuming this function exists
+        noiseImage = loadNoiseImage(from: "background")
         viewModel.connect()
         viewModel.sendMessage("GET PARTICIPANTS")
         audioViewModel.startMonitoring()
@@ -152,17 +271,20 @@ struct MeetingRoomView: View {
 
 struct ButtonPane: View {
     @Binding var wantsScreenShare: Bool
+    @Binding var isViewingRecording: Bool
     @EnvironmentObject private var cameraViewModel: CameraViewModel
     @EnvironmentObject private var screenCaptureModel: ScreenCaptureViewModel
     @EnvironmentObject private var recordingService: RecordingService
 
     var body: some View {
         VStack(spacing: 15) {
-            // Record Button
-            RecordButton(isRecording: $recordingService.isRecording)
-                .frame(width: 50, height: 50)
+            RecordButton(
+                isRecording: $recordingService.isRecording,
+                isViewingRecording: $isViewingRecording
+            )
+            .frame(width: 50, height: 50)
+            .zIndex(10)
             
-            // Camera Toggle Button
             CommandButton(
                 icon: cameraViewModel.isCapturing ? "video.fill" : "video.slash.fill",
                 color: Color(hex: "34495E")
@@ -175,7 +297,6 @@ struct ButtonPane: View {
             }
             .frame(width: 40, height: 40)
             
-            // Screen Sharing Toggle Button
             CommandButton(
                 icon: wantsScreenShare ? "rectangle.on.rectangle.angled.fill" : "rectangle.on.rectangle.angled",
                 color: Color(hex: "34495E")
@@ -183,7 +304,7 @@ struct ButtonPane: View {
                 wantsScreenShare.toggle()
                 if wantsScreenShare {
                     screenCaptureModel.startScreenCapture()
-                    SoundManager.shared.playScreenSharedSound() // Assuming this exists
+                    SoundManager.shared.playScreenSharedSound()
                 } else {
                     screenCaptureModel.stopScreenCapture()
                     SoundManager.shared.playCancelSound()
@@ -229,127 +350,181 @@ struct ButtonPane: View {
 
 struct RecordButton: View {
     @Binding var isRecording: Bool
-    @EnvironmentObject private var recordingService: RecordingService
+    @Binding var isViewingRecording: Bool
+    @State private var showMenu: Bool = false
     @State private var isHovered = false
-    @State private var pulseScale: CGFloat = 1.0
+    @EnvironmentObject private var recordingService: RecordingService
     
     var body: some View {
-        Button(action: {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
-                if isRecording {
-                    recordingService.stopCapture()
-                } else {
-                    recordingService.startCapture()
-                }
-            }
-        }) {
-            ZStack {
-                // Pulse effect when recording
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [
-                                Color(hex: "EC4899").opacity(0.3),
-                                Color(hex: "8B5CF6").opacity(0.1),
-                                .clear
-                            ]),
-                            center: .center,
-                            startRadius: 5,
-                            endRadius: 60
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(hex: "F9FAFB"),
+                            Color(hex: "D1D5DB")
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 50, height: 50)
+                .overlay(
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(hex: "8B5CF6"),
+                                    Color(hex: "EC4899")
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 4
                         )
-                    )
-                    .scaleEffect(isRecording ? pulseScale : 0)
-                    .opacity(isRecording ? 0.8 : 0)
-                
-                // Main button background
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(hex: "3B0764"),
-                                Color(hex: "1E293B")
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 60, height: 60)
-                
-                // Glowing border
-                Circle()
-                    .strokeBorder(
-                        AngularGradient(
-                            gradient: Gradient(colors: [
-                                Color(hex: "8B5CF6"),
-                                Color(hex: "EC4899"),
-                                Color(hex: "8B5CF6"),
-                            ]),
-                            center: .center,
-                            angle: .degrees(isRecording ? 360 : 0)
-                        ),
-                        lineWidth: 3
-                    )
-                    .frame(width: 64, height: 64)
-                    .shadow(color: Color(hex: "8B5CF6").opacity(0.5), radius: 8, x: 0, y: 0)
-                
-                // Center icon
-                ZStack {
+                        .shadow(color: Color(hex: "8B5CF6").opacity(0.6), radius: 6, x: 0, y: 0)
+                )
+                .overlay(
+                    Circle()
+                        .fill(isRecording ? Color.red : Color.gray)
+                        .frame(width: 20, height: 20)
+                        .shadow(color: Color.red.opacity(0.5), radius: 4, x: 0, y: 0)
+                )
+                .contentShape(Circle())
+                .onTapGesture {
                     if isRecording {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.red)
-                            .frame(width: 24, height: 24)
-                            .shadow(color: Color.red.opacity(0.6), radius: 4, x: 0, y: 0)
+                        recordingService.stopCapture()
                     } else {
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    gradient: Gradient(colors: [
-                                        Color(hex: "F9FAFB"),
-                                        Color(hex: "D1D5DB")
-                                    ]),
-                                    center: .center,
-                                    startRadius: 5,
-                                    endRadius: 20
-                                )
-                            )
-                            .frame(width: 28, height: 28)
+                        recordingService.startCapture()
+                    }
+                    print("Button tapped")
+                }
+                .onHover { hovering in
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isHovered = hovering
+                        if hovering {
+                            // Only show menu when button is hovered
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                if isHovered {
+                                    showMenu = true
+                                }
+                            }
+                        } else {
+                            // Don't hide immediately when leaving the button
+                            // The menu will handle its own visibility
+                        }
                     }
                 }
-                
-                // Hover overlay
-                Circle()
-                    .fill(Color.white.opacity(isHovered ? 0.1 : 0))
-                    .frame(width: 60, height: 60)
+            
+            if showMenu {
+                recordButtonContextMenu()
+                    .offset(x: 60, y: 0)
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.2), value: showMenu)
+                    .zIndex(100)
             }
         }
-        .buttonStyle(RecordButtonStyle())
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovered = hovering
-            }
-        }
-        .onChange(of: isRecording) { newValue in
-            if newValue {
-                startPulseAnimation()
-            }
-        }
+        .frame(width: 50, height: 50)
     }
     
-    private func startPulseAnimation() {
-        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-            pulseScale = 1.4
+    @ViewBuilder
+    private func recordButtonContextMenu() -> some View {
+        // Separate view for the menu with its own hover detection
+        MenuContent(
+            isRecording: $isRecording,
+            isViewingRecording: $isViewingRecording,
+            showMenu: $showMenu,
+            recordingService: recordingService
+        )
+        .onHover { hovering in
+            // Keep menu open when hovering over it
+            if !hovering && !isHovered {
+                // Only close when both menu and button are not hovered
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    if !isHovered {
+                        withAnimation {
+                            showMenu = false
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
-struct RecordButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
-            .brightness(configuration.isPressed ? -0.05 : 0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+// Separate view for menu content
+struct MenuContent: View {
+    @Binding var isRecording: Bool
+    @Binding var isViewingRecording: Bool
+    @Binding var showMenu: Bool
+    var recordingService: RecordingService
+    @State private var hoveredButton: String? = nil
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Button("Start Recording") {
+                if !isRecording {
+                    recordingService.startCapture()
+                }
+                // Don't hide menu after clicking
+            }
+            .disabled(isRecording)
+            .buttonStyle(MenuButtonStyle(isHovered: hoveredButton == "start"))
+            .onHover { hovering in
+                hoveredButton = hovering ? "start" : nil
+            }
+            
+            Button("Stop Recording") {
+                if isRecording {
+                    recordingService.stopCapture()
+                }
+                // Don't hide menu after clicking
+            }
+            .disabled(!isRecording)
+            .buttonStyle(MenuButtonStyle(isHovered: hoveredButton == "stop"))
+            .onHover { hovering in
+                hoveredButton = hovering ? "stop" : nil
+            }
+            
+            Button("View Recording") {
+                isViewingRecording.toggle()
+                print("View Recording clicked - now \(isViewingRecording ? "showing" : "hiding") recording view")
+                // Hide menu after this action
+                withAnimation {
+                    showMenu = false
+                }
+            }
+            .buttonStyle(MenuButtonStyle(isHovered: hoveredButton == "view"))
+            .onHover { hovering in
+                hoveredButton = hovering ? "view" : nil
+            }
+        }
+        .padding(8)
+        .background(Color(hex: "2C3E50").opacity(0.95))
+        .cornerRadius(8)
+        .shadow(radius: 5)
+        .frame(width: 150)
     }
 }
+
+// Custom button style for menu items
+struct MenuButtonStyle: ButtonStyle {
+    let isHovered: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(isHovered ? Color(hex: "4F46E5").opacity(0.3) : Color.clear)
+            )
+            .contentShape(Rectangle())
+    }
+}
+
 struct ParticipantSidebar: View {
     let participants: [Participant]
 
@@ -528,8 +703,10 @@ struct CommandBar: View {
                     CommandButton(icon: "rectangle.on.rectangle.angled", color: Color(hex: "34495E")) {
                         wantsScreenShare.toggle()
                         if wantsScreenShare {
+                            screenCaptureModel.startScreenCapture()
                             SoundManager.shared.playScreenSharedSound()
                         } else {
+                            screenCaptureModel.stopScreenCapture()
                             SoundManager.shared.playCancelSound()
                         }
                     }
@@ -763,7 +940,6 @@ struct CommandButtonStyle: ButtonStyle {
     }
 }
 
-
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -782,3 +958,4 @@ extension Color {
         .environmentObject(AudioMeterViewModel())
         .environmentObject(CameraViewModel())
 }
+

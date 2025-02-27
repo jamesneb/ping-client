@@ -24,6 +24,7 @@
 		D4D37DC42D6535D000C0D0DD /* chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = D4D37DC32D6535D000C0D0DD /* chime.wav */; };
 		D4D37DC62D653C8A00C0D0DD /* ScreenShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D37DC52D653C8A00C0D0DD /* ScreenShareService.swift */; };
 		D4D37DC82D656A8E00C0D0DD /* ScreenShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D37DC72D656A8E00C0D0DD /* ScreenShareView.swift */; };
+		D4E8ADB32D6FD76000E531E9 /* RecordingPlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E8ADB22D6FD76000E531E9 /* RecordingPlaybackView.swift */; };
 		D4FC20F02D6019B3000D3097 /* InputError 3.wav in Resources */ = {isa = PBXBuildFile; fileRef = D4FC20EF2D6019B3000D3097 /* InputError 3.wav */; };
 		D4FF292E2D6BE86300B9D017 /* NetworkScannerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FF292D2D6BE86300B9D017 /* NetworkScannerViewModel.swift */; };
 		D4FF29302D6BF11100B9D017 /* RecordService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FF292F2D6BF11100B9D017 /* RecordService.swift */; };
@@ -69,6 +70,7 @@
 		D4D37DC32D6535D000C0D0DD /* chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = chime.wav; sourceTree = "<group>"; };
 		D4D37DC52D653C8A00C0D0DD /* ScreenShareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenShareService.swift; sourceTree = "<group>"; };
 		D4D37DC72D656A8E00C0D0DD /* ScreenShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenShareView.swift; sourceTree = "<group>"; };
+		D4E8ADB22D6FD76000E531E9 /* RecordingPlaybackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPlaybackView.swift; sourceTree = "<group>"; };
 		D4FC20EF2D6019B3000D3097 /* InputError 3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "InputError 3.wav"; sourceTree = "<group>"; };
 		D4FF292D2D6BE86300B9D017 /* NetworkScannerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkScannerViewModel.swift; sourceTree = "<group>"; };
 		D4FF292F2D6BF11100B9D017 /* RecordService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordService.swift; sourceTree = "<group>"; };
@@ -158,6 +160,7 @@
 		D4145BDD2D4C65BE00EAF352 = {
 			isa = PBXGroup;
 			children = (
+				D4E8ADB22D6FD76000E531E9 /* RecordingPlaybackView.swift */,
 				D4FF292F2D6BF11100B9D017 /* RecordService.swift */,
 				D4FF292D2D6BE86300B9D017 /* NetworkScannerViewModel.swift */,
 				D470699B2D696C37008ADE80 /* Networking */,
@@ -367,6 +370,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4E8ADB32D6FD76000E531E9 /* RecordingPlaybackView.swift in Sources */,
 				D41BD3F22D5BF7A600B80464 /* SignupView.swift in Sources */,
 				D4B02F2D2D614B640068D4C7 /* MeetingRoomView 2.swift in Sources */,
 				D41623262D50082500A5463C /* websocket.swift in Sources */,
